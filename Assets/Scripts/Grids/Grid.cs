@@ -44,6 +44,9 @@ public class Grid : MonoBehaviour
     #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
+        if (GridSize.x * GridSize.y * GridSize.z > 100)
+            return;
+        
         GUIStyle style = new GUIStyle();
         style.normal.textColor = Color.black;
         

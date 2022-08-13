@@ -58,6 +58,7 @@ namespace Editor
                             debugSpawnPos + composite.TileOffsets[i] * t.TileSize, true);
                         tile.Composite = composite;
                         t.Tiles.Add(tile);
+                        tile.TileIndex = t.Tiles.Count - 1;
                         composite.Tiles[i] = tile;
                     }
 
@@ -88,6 +89,7 @@ namespace Editor
                     TileDatabase.Tile tile = TileDatabase.CreateTileVariant(t, baseTile, rot, debugSpawnPos, true);
                     tile.Composite = null;
                     t.Tiles.Add(tile);
+                    tile.TileIndex = t.Tiles.Count - 1;
                     debugSpawnPos.x += t.TileSize + 2.0f;
                 }
             }

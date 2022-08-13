@@ -10,7 +10,6 @@ using UnityEngine.Tilemaps;
 
 public class TileFactory : MonoBehaviour
 {
-    public const int TilePoolSize = 1000;
     public TileInstance TilePrefab;
 
     private Grid _grid;
@@ -81,7 +80,8 @@ public class TileFactory : MonoBehaviour
     {
         _grid = grid;
         _tilePoolUnused = new List<TileInstance>();
-        for (int i = 0; i < TilePoolSize; i++)
+        int poolSize = _grid.GridSize.x * _grid.GridSize.y * _grid.GridSize.z;
+        for (int i = 0; i < poolSize; i++)
         {
             TileInstance tile = Instantiate(TilePrefab, transform, true);
             _tilePoolUnused.Add(tile);
@@ -155,22 +155,4 @@ public class TileFactory : MonoBehaviour
         _tilePoolUnused.Add(tile);
         _cellToTile.Remove(cellIdx);
     }
-
-    // private bool GenerateMeshForCollapsedCell(Mesh mesh, VoxelGrid.Cell cell, TileDatabase.Tile tile)
-    // {
-    //     Vector3[] gridVertsBot = _grid.VoxelVerts;
-    //     Vector3[] gridVertsTop = _grid.VoxelVerts;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         _cornerVertsBot[i] = gridVertsBot[cell.vBot[i]];
-    //         _cornerVertsTop[i] = gridVertsTop[cell.vTop[i]];
-    //     }
-    //
-    //     int vertCount = 0;
-    //     int indexCount = 0;
-    //     
-    //     mesh = tile.Mesh;
-    //     
-    //     return true;
-    // }
 }

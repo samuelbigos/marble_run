@@ -9,8 +9,6 @@ public class BaseTile : ScriptableObject
     [SerializeField] public Vector3 MeshOffset;
     [SerializeField] public Material[] Materials;
     [SerializeField] public BaseTileComposite Composite;
-    [SerializeField] public int Top;
-    [SerializeField] public int Right;
-    [SerializeField] public int Bottom;
-    [SerializeField] public int Left;
+    [SerializeField] public int[] Match = new int[6];
+    [SerializeField] public int[] NotMatch = new int[4];
 }

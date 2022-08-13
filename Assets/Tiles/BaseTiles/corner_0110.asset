@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: corner_0110
   m_EditorClassIdentifier: 
   Mesh: {fileID: 5761739814090621300, guid: 34924f703b4b7eb4e9609f104f31850f, type: 3}
+  MeshOffset: {x: 0, y: 0, z: 0}
   Materials:
   - {fileID: 1151844921754575795, guid: 34924f703b4b7eb4e9609f104f31850f, type: 3}
   - {fileID: -5354028657143720620, guid: 34924f703b4b7eb4e9609f104f31850f, type: 3}
-  Top: 0
-  Right: 1
-  Bottom: 1
-  Left: 0
+  Composite: {fileID: 0}
+  Match: 000000000100000001000000000000000000000000000000
+  NotMatch: 00000000000000000000000000000000

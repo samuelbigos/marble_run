@@ -12,12 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9823a12e8595a5d46a82b7cbdda27c64, type: 3}
   m_Name: top
   m_EditorClassIdentifier: 
-  Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  Mesh: {fileID: 0}
   MeshOffset: {x: 0, y: 0, z: 0}
   Materials:
   - {fileID: -5354028657143720620, guid: 12b73d2baf8d0ef4e83edd779125bd2d, type: 3}
   Composite: {fileID: 11400000, guid: e4b5e7eb331962c4f876ea61a0b0341c, type: 2}
-  Top: 2
-  Right: 0
-  Bottom: 0
-  Left: 0
+  Match: 020000000000000000000000000000000100000000000000
+  NotMatch: 01000000000000000000000000000000

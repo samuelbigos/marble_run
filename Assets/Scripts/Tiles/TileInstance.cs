@@ -20,7 +20,7 @@ public class TileInstance : MonoBehaviour
 
     public void Init(TileDatabase.Tile tile, int cellIdx, Grid grid, Vector3 position)
     {
-        MeshRenderer.transform.position += tile.MeshOffset;
+        MeshRenderer.transform.position = tile.MeshOffset;
 
         _tile = tile;
         name = tile.Name;
@@ -75,6 +75,15 @@ public class TileInstance : MonoBehaviour
         top[1] = new Vector3(o, o, -o);
         top[2] = new Vector3(o, o, o);
         top[3] = new Vector3(-o, o, o);
+
+        GUIStyle style = new GUIStyle();
+        
+        if (_tile != null)
+        {
+            style.normal.textColor = Color.blue;
+            Handles.Label(transform.position, $"{_tile.TileIndex}", style);
+        }
+        style.normal.textColor = Color.magenta;
         
         for (int i = 0; i < 4; i++)
         {
@@ -88,18 +97,17 @@ public class TileInstance : MonoBehaviour
             Gizmos.DrawLine(p + top[i] * s, p + top[i] * s + (top[(i + 1) % 4] - top[i]) * 0.25f * s);
             Gizmos.DrawLine(p + top[i] * s, p + top[i] * s + (top[(i + 3) % 4] - top[i]) * 0.25f * s);
 
-            GUIStyle style = new GUIStyle();
-            style.normal.textColor = Color.magenta;
-
             if (_tile != null)
             {
                 //Handles.Label(transform.position, $"Coord: {_grid.XYZFromIndex(_cellIdx)}", style);
                 //Handles.Label(transform.position + top[0] * 0.25f, $"Idx: {_cellIdx}", style);
                 
-                Handles.Label(transform.position + Vector3.forward * 0.5f, $"{_tile.Sides[0]}", style);
-                Handles.Label(transform.position + Vector3.right * 0.5f, $"{_tile.Sides[1]}", style);
-                Handles.Label(transform.position - Vector3.forward * 0.5f, $"{_tile.Sides[2]}", style);
-                Handles.Label(transform.position - Vector3.right * 0.5f, $"{_tile.Sides[3]}", style);
+                Handles.Label(transform.position + Vector3.forward * 0.5f, $"{_tile.Match[0]}" + (_tile.NotMatch[0] == 0 ? "" : $"-{_tile.NotMatch[0]}"), style);
+                Handles.Label(transform.position + Vector3.right * 0.5f, $"{_tile.Match[1]}" + (_tile.NotMatch[1] == 0 ? "" : $"-{_tile.NotMatch[1]}"), style);
+                Handles.Label(transform.position - Vector3.forward * 0.5f, $"{_tile.Match[2]}" + (_tile.NotMatch[2] == 0 ? "" : $"-{_tile.NotMatch[2]}"), style);
+                Handles.Label(transform.position - Vector3.right * 0.5f, $"{_tile.Match[3]}" + (_tile.NotMatch[3] == 0 ? "" : $"-{_tile.NotMatch[3]}"), style);
+                Handles.Label(transform.position - Vector3.up * 0.5f, $"{_tile.Match[4]}", style);
+                Handles.Label(transform.position + Vector3.up * 0.5f, $"{_tile.Match[5]}", style);
             }
             
             // Handles.Label(p + v[_cell.vBot[i]] + (v[_cell.vBot[(i + 1) % 4]] + v[_cell.vBot[(i + 3) % 4]] - v[_cell.vBot[i]] * 2.0f) * 0.15f, $"{_prot._cornerMasksBot[i, 0]}", style);

@@ -13,11 +13,10 @@ MonoBehaviour:
   m_Name: bottom
   m_EditorClassIdentifier: 
   Mesh: {fileID: 1507981683815345297, guid: 23aa152a2d4bb5b4aba7822279045552, type: 3}
+  MeshOffset: {x: 0, y: 0, z: 0}
   Materials:
   - {fileID: 1151844921754575795, guid: 23aa152a2d4bb5b4aba7822279045552, type: 3}
   - {fileID: -5354028657143720620, guid: 23aa152a2d4bb5b4aba7822279045552, type: 3}
   Composite: {fileID: 11400000, guid: e4b5e7eb331962c4f876ea61a0b0341c, type: 2}
-  Top: 0
-  Right: 0
-  Bottom: 1
-  Left: 0
+  Match: 000000000000000001000000000000000000000001000000
+  NotMatch: 00000000000000000000000000000000

@@ -102,7 +102,7 @@ public class World : MonoBehaviour
                     DrawErrorCube(_errorCubeA, new List<int> { incompatibleNeighbor });
                     DrawErrorCube(_errorCubeB, new List<int> { incompatibleStack });
                     _wfcFinished = true;
-                    Debug.LogError($"Could not find compatible tile for cell {incompatibleStack}.");
+                    Debug.LogError($"Could not find compatible tile for cell {incompatibleNeighbor} to {incompatibleStack}.");
                     break;
                 case WFC.StepResult.WFCCollapseError:
                     _wfcFinished = true;
@@ -114,7 +114,7 @@ public class World : MonoBehaviour
                     break;
             }
 
-            if (result == WFC.StepResult.WFCInProgress)
+            if (result != WFC.StepResult.WFCFinished && result != WFC.StepResult.WFCCollapseError)
             {
                 List<int> cubes = new();
                 foreach ((int, int) collapse in collapses)
@@ -123,7 +123,7 @@ public class World : MonoBehaviour
                     collapsedProtQueue.Add(collapse.Item2);
                     cubes.Add(collapse.Item1);
                 }
-                DrawErrorCube(_errorCubeA, cubes);
+                //DrawErrorCube(_errorCubeA, cubes);
             }
 
             if (_wfcFinished)

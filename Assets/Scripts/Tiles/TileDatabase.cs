@@ -24,9 +24,11 @@ namespace Tiles
             public Mesh Mesh;
             public Vector3 MeshOffset;
             public Material[] Materials;
-            public int[] Sides;
+            public int[] Match;
+            public int[] NotMatch;
             public int Rot;
             public Composite Composite;
+            public int TileIndex;
         }
 
         public class Composite
@@ -68,6 +70,7 @@ namespace Tiles
                         Tile tile = CreateTileVariant(this, baseTile, rot, Vector3.zero);
                         tile.Composite = composite;
                         Tiles.Add(tile);
+                        tile.TileIndex = Tiles.Count - 1;
                         composite.Tiles[i] = tile;
                     }
 
@@ -86,6 +89,7 @@ namespace Tiles
                     Tile tile = CreateTileVariant(this, baseTile, rot, Vector3.zero);
                     tile.Composite = null;
                     Tiles.Add(tile);
+                    tile.TileIndex = Tiles.Count - 1;
                 }
             }
         }
@@ -96,7 +100,10 @@ namespace Tiles
             tile.Mesh = baseTile.Mesh;
             tile.MeshOffset = baseTile.MeshOffset;
             tile.Materials = baseTile.Materials;
-            tile.Sides = new[] { baseTile.Top, baseTile.Right, baseTile.Bottom, baseTile.Left };
+            tile.Match = new int[6];
+            baseTile.Match.CopyTo(tile.Match.AsSpan());
+            tile.NotMatch = new int[4];
+            baseTile.NotMatch.CopyTo(tile.NotMatch.AsSpan());
             tile.Size = 1;
             foreach (char c in rot)
             {
@@ -120,12 +127,18 @@ namespace Tiles
 
         public static void Rot90_Y(Tile tile)
         {
-            int[] sides = new int[4];
-            tile.Sides.CopyTo(sides, 0);
-            tile.Sides[0] = sides[3];
-            tile.Sides[1] = sides[0];
-            tile.Sides[2] = sides[1];
-            tile.Sides[3] = sides[2];
+            int[] match = new int[6];
+            tile.Match.CopyTo(match, 0);
+            tile.Match[0] = match[3];
+            tile.Match[1] = match[0];
+            tile.Match[2] = match[1];
+            tile.Match[3] = match[2];
+            int[] nots = new int[4];
+            tile.NotMatch.CopyTo(nots, 0);
+            tile.NotMatch[0] = nots[3];
+            tile.NotMatch[1] = nots[0];
+            tile.NotMatch[2] = nots[1];
+            tile.NotMatch[3] = nots[2];
             tile.Rot++;
         }
     }

@@ -11,12 +11,6 @@ using Utils;
 
 public class WFC : MonoBehaviour
 {
-    public enum Entropy
-    {
-        Distance,
-        Shannon
-    }
-    
     public enum StepResult
     {
         WFCInProgress,
@@ -34,16 +28,12 @@ public class WFC : MonoBehaviour
         COUNT
     }
 
-    public Entropy EntropyMode = Entropy.Shannon;
-
     private enum TILE
     {
         TOP,
         BOT,
         SIDE_0, SIDE_1, SIDE_2, SIDE_3,
-        SIDE_0_INV, SIDE_1_INV, SIDE_2_INV, SIDE_3_INV,
-        TOP_0, TOP_1, TOP_2, TOP_3,
-        BOT_0, BOT_1, BOT_2, BOT_3,
+        NOT_SIDE_0, NOT_SIDE_1, NOT_SIDE_2, NOT_SIDE_3,
         COMPOSITE,
         INDEX_IN_COMPOSITE,
         WEIGHT,
@@ -168,16 +158,16 @@ public class WFC : MonoBehaviour
         {
             TileDatabase.Tile tile = tiles[i];
 
-            _tiles[i, (int) TILE.TOP] = 1;
-            _tiles[i, (int) TILE.BOT] = 1;
-            _tiles[i, (int) TILE.SIDE_0] = tile.Sides[0];
-            _tiles[i, (int) TILE.SIDE_1] = tile.Sides[1];
-            _tiles[i, (int) TILE.SIDE_2] = tile.Sides[2];
-            _tiles[i, (int) TILE.SIDE_3] = tile.Sides[3];
-            _tiles[i, (int) TILE.SIDE_0_INV] = tile.Sides[0];
-            _tiles[i, (int) TILE.SIDE_1_INV] = tile.Sides[1];
-            _tiles[i, (int) TILE.SIDE_2_INV] = tile.Sides[2];
-            _tiles[i, (int) TILE.SIDE_3_INV] = tile.Sides[3];
+            _tiles[i, (int) TILE.BOT] = tile.Match[4];
+            _tiles[i, (int) TILE.TOP] = tile.Match[5];
+            _tiles[i, (int) TILE.SIDE_0] = tile.Match[0];
+            _tiles[i, (int) TILE.SIDE_1] = tile.Match[1];
+            _tiles[i, (int) TILE.SIDE_2] = tile.Match[2];
+            _tiles[i, (int) TILE.SIDE_3] = tile.Match[3];
+            _tiles[i, (int) TILE.NOT_SIDE_0] = tile.NotMatch[0];
+            _tiles[i, (int) TILE.NOT_SIDE_1] = tile.NotMatch[1];
+            _tiles[i, (int) TILE.NOT_SIDE_2] = tile.NotMatch[2];
+            _tiles[i, (int) TILE.NOT_SIDE_3] = tile.NotMatch[3];
             if (tile.Composite != null && tile.Composite.Name != "")
             {
                 _tiles[i, (int) TILE.COMPOSITE] = compositeToIndex[tile.Composite.Name];
@@ -228,32 +218,32 @@ public class WFC : MonoBehaviour
                 _wave[c, t] = 1;
                 
                 // make any composites that go out of bounds invalid.
-                int composite = _tiles[t, (int) TILE.COMPOSITE];
-                if (composite != -1)
-                {
-                    int tileIndexInComposite = _tiles[t, (int) TILE.INDEX_IN_COMPOSITE];
-                    Vector3Int baseOffset = _compositeOffsets[composite, tileIndexInComposite];
-                    Vector3Int cellXyz = Grid.XYZFromIndex(c, _gridSize);
-                
-                    for (int i = 0; i < COMPOSITE_MAX_TILES; i++)
-                    {
-                        int tileInComp = _compositeTiles[composite, i];
-                        if (tileInComp == -1)
-                            break;
-                    
-                        Vector3Int offset = _compositeOffsets[composite, i];
-                        Vector3Int xyz = cellXyz - baseOffset + offset;
-                        int cellInComposite = Grid.IndexFromXYZ(xyz, _gridSize, out bool outOfBounds);
-                        if (outOfBounds)
-                        {
-                            _wave[c, t] = 0;
-                            break;
-                        }
-                    }
-                }
+                // int composite = _tiles[t, (int) TILE.COMPOSITE];
+                // if (composite != -1)
+                // {
+                //     int tileIndexInComposite = _tiles[t, (int) TILE.INDEX_IN_COMPOSITE];
+                //     Vector3Int baseOffset = _compositeOffsets[composite, tileIndexInComposite];
+                //     Vector3Int cellXyz = Grid.XYZFromIndex(c, _gridSize);
+                //
+                //     for (int i = 0; i < COMPOSITE_MAX_TILES; i++)
+                //     {
+                //         int tileInComp = _compositeTiles[composite, i];
+                //         if (tileInComp == -1)
+                //             break;
+                //     
+                //         Vector3Int offset = _compositeOffsets[composite, i];
+                //         Vector3Int xyz = cellXyz - baseOffset + offset;
+                //         int cellInComposite = Grid.IndexFromXYZ(xyz, _gridSize, out bool outOfBounds);
+                //         if (outOfBounds)
+                //         {
+                //             _wave[c, t] = 0;
+                //             break;
+                //         }
+                //     }
+                // }
             }
 
-            _entropy[c] = CalcEntropy(c, EntropyMode, _wave, _tiles, T, _startPos);
+            _entropy[c] = CalcEntropy(c, _wave, _tiles, T, _startPos);
             _collapsed[c] = false;
         }
 
@@ -270,7 +260,7 @@ public class WFC : MonoBehaviour
 
         _seed = System.DateTime.Now.Millisecond;
         Debug.Log($"WFC Seed: {_seed}");
-        _seed = 772;
+        _seed = 659;
         _rng = new System.Random(_seed);
         
         _profileSetup.End();
@@ -361,7 +351,6 @@ public class WFC : MonoBehaviour
         public NativeArray<int> _collapsedCells;
         public NativeArray<int> _collapsedTiles;
         public float _weightToInt;
-        public Entropy _entropyMode;
 
         private Unity.Mathematics.Random _rng;
         private int _collapses;
@@ -374,7 +363,6 @@ public class WFC : MonoBehaviour
             StepResult result = Collapse();
             if (result == StepResult.WFCInProgress)
             {
-                _stackSize = 1;
                 while (_stackSize > 0)
                 {
                     if (Propagate(out int incompatibleStack, out int incompatibleNeighbor)) continue;
@@ -408,14 +396,8 @@ public class WFC : MonoBehaviour
                 {
                     if (_wave[nCell, nt] == 0)
                         continue;
-
-                    bool compatible = IsAnyTileCompatibleWithCellInDirection(nt, sCell, n);
                     
-                    // if the tile is composite, check all other tiles in the composite
-                    if (compatible && _tiles[nt, (int) TILE.COMPOSITE] != -1)
-                    {
-                        compatible &= IsCompositeCompatible(nt, nCell);
-                    }
+                    bool compatible = IsAnyTileCompatibleWithCellInDirection(nt, sCell, n);
 
                     if (compatible) continue;
                     _incompatible[incompatibleCount] = nt;
@@ -426,7 +408,7 @@ public class WFC : MonoBehaviour
                 
                 for (int i = 0; i < incompatibleCount; i++)
                 {
-                    Ban(nCell, (ushort)_incompatible[i]);
+                    Ban(nCell, (ushort)_incompatible[i], true);
                 }
 
                 int count = 0;
@@ -442,7 +424,8 @@ public class WFC : MonoBehaviour
                     return false;
                 }
 
-                _entropy[nCell] = CalcEntropy(nCell, _entropyMode, _wave, _tiles, T, _startPos);
+                _entropy[nCell] = CalcEntropy(nCell, _wave, _tiles, T, _startPos);
+                //Debug.Log($"Cell {nCell} entropy: {_entropy[nCell]}");
                 _stack[_stackSize] = nCell;
                 _stackSize++;
             }
@@ -450,46 +433,6 @@ public class WFC : MonoBehaviour
             incompatibleNeighbor = 0;
 
             return true;
-        }
-
-        private bool IsCompositeCompatible(int tile, int cell)
-        {
-            bool compatible = true;
-            
-            int composite = _tiles[tile, (int) TILE.COMPOSITE];
-            int tileIndexInComposite = _tiles[tile, (int) TILE.INDEX_IN_COMPOSITE];
-            Vector3Int baseOffset = _compositeOffsets[composite, tileIndexInComposite];
-            Vector3Int cellXyz = Grid.XYZFromIndex(cell, _gridSize);
-            for (int i = 0; i < COMPOSITE_MAX_TILES; i++)
-            {
-                if (i == tileIndexInComposite)
-                    continue;
-                
-                int tileInComp = _compositeTiles[composite, i];
-                if (tileInComp == -1)
-                    break;
-
-                Vector3Int offset = _compositeOffsets[composite, i];
-                for (int n = 0; n < D; n++)
-                {
-                    int cellInComposite = Grid.IndexFromXYZ(cellXyz - baseOffset + offset, _gridSize, out bool outOfBounds);
-                    if (outOfBounds)
-                        return false;
-                    
-                    int nCell = _neighbors[cellInComposite, n];
-                    if (nCell == -1)
-                        continue;
-                    
-                    compatible &= IsAnyTileCompatibleWithCellInDirection(tileInComp, nCell, n);
-                    if (!compatible)
-                        break;
-                }
-
-                if (!compatible)
-                    break;
-            }
-
-            return compatible;
         }
 
         private bool IsAnyTileCompatibleWithCellInDirection(int tile, int cell, int dir)
@@ -503,8 +446,8 @@ public class WFC : MonoBehaviour
 
                 compatible = dir switch
                 {
-                    5 => _tiles[st, (int) TILE.BOT] == _tiles[tile, (int) TILE.TOP],
                     4 => _tiles[st, (int) TILE.TOP] == _tiles[tile, (int) TILE.BOT],
+                    5 => _tiles[st, (int) TILE.BOT] == _tiles[tile, (int) TILE.TOP],
                     _ => Compatible(st, tile, dir)
                 };
 
@@ -578,10 +521,8 @@ public class WFC : MonoBehaviour
                     Vector3Int xyz = cellXyz - baseOffset + offset;
                     int cellInComposite = Grid.IndexFromXYZ(xyz, _gridSize, out bool outOfBounds);
                     if (outOfBounds)
-                    {
-                        Debug.LogError($"Cell {cellInComposite} at {xyz} out of bounds!");
-                        return StepResult.WFCCollapseError;
-                    }
+                        continue;
+                    
                     CollapseCellToTile(cellInComposite, tileInComp);
                 }
             }
@@ -595,11 +536,19 @@ public class WFC : MonoBehaviour
 
         private void CollapseCellToTile(int cell, int tile)
         {
+            if (_collapsed[cell])
+            {
+                Debug.LogError($"Cell {cell} is already collapsed!");
+                return;
+            }
+
             for (int i = 0; i < T; i++)
             {
-                _wave[cell, i] = 0;
+                if (i == tile)
+                    continue;
+                
+                Ban(cell, (ushort)i, true);
             }
-            _wave[cell, tile] = 1;
             _collapsed[cell] = true;
             _stack[_stackSize] = cell;
             _stackSize++;
@@ -633,68 +582,78 @@ public class WFC : MonoBehaviour
             return lowestIdx;
         }
 
-        private void Ban(int cell, ushort tile)
+        private void Ban(int cell, int tile, bool addToStack = false)
         {
             _wave[cell, tile] = 0;
-        }
 
-        private bool Compatible(int tile_1, int tile_2, int n)
-        {
-            int s_slot = _tiles[tile_1, (int)TILE.SIDE_0 + n];
-            int n_slot = _tiles[tile_2, (int)TILE.SIDE_0_INV + (n + 2) % 4];
-            return s_slot == n_slot;
-        }
-    }
-
-    private static float CalcEntropy(int cell, Entropy mode, NativeArrayXD<ushort> wave, NativeArrayXD<int> tiles, int waveHeight, Vector3 start)
-    {
-        switch (mode)
-        {
-            case Entropy.Distance:
+            //if (cell == 21)
             {
-                return 0.0f;
-                //return Vector3.Distance(cellPositions[cell], start);
+                //Debug.Log($"Banning tile {tile} on cell {cell}");
             }
-            case Entropy.Shannon:
-            default:
+
+            // if the tile is composite, ban all other tiles in that composite
+            int composite = _tiles[tile, (int) TILE.COMPOSITE];
+            if (_tiles[tile, (int) TILE.COMPOSITE] != -1)
+            {
+                int tileIndexInComposite = _tiles[tile, (int) TILE.INDEX_IN_COMPOSITE];
+                Vector3Int baseOffset = _compositeOffsets[composite, tileIndexInComposite];
+                Vector3Int cellXyz = Grid.XYZFromIndex(cell, _gridSize);
+                for (int i = 0; i < COMPOSITE_MAX_TILES; i++)
                 {
-                    float sumOfWeights = 0.0f;
-                    float sumOfWeightsLogWeights = 0.0f;
-                    for (int i = 0; i < waveHeight; i++)
+                    int tileInComposite = _compositeTiles[composite, i];
+                    if (tileInComposite == -1)
+                        break;
+
+                    Vector3Int offset = _compositeOffsets[composite, i];
+                    int cellInComposite = Grid.IndexFromXYZ(cellXyz - baseOffset + offset, _gridSize, out bool outOfBounds);
+                    if (outOfBounds)
+                        continue; 
+                    
+                    if (cellInComposite == cell)
+                        continue;
+
+                    //if (cell == 21)
                     {
-                        if (wave[cell, i] == 0)
-                            continue;
-
-                        float p = tiles[i, (int)TILE.WEIGHT] / WEIGHT_TO_INT;
-                        sumOfWeights += p;
-                        sumOfWeightsLogWeights += p * Mathf.Log(p);
+                        //Debug.Log($"Banning composite tile {tileInComposite} on cell {cellInComposite}");
                     }
-                    float entropy = Mathf.Log(sumOfWeights) - sumOfWeightsLogWeights / sumOfWeights;
-                    return entropy;
+                    
+                    _wave[cellInComposite, tileInComposite] = 0;
+
+                    if (addToStack)
+                    {
+                        _stack[_stackSize] = cellInComposite;
+                        _stackSize++;
+                    }
                 }
+            }
         }
-    }
 
-    private bool TestConstraint(int cellIdx, IReadOnlyList<int> top, IReadOnlyList<int> bot)
-    {
-        bool match = false;
-        for (int p = 0; p < T; p++)
+        private bool Compatible(int tile1, int tile2, int n)
         {
-            match |= Match(p, top, bot);
+            int sSlot = _tiles[tile1, (int)TILE.SIDE_0 + n];
+            int nSlot = _tiles[tile2, (int)TILE.SIDE_0 + (n + 2) % 4];
+            int sNotSlot = _tiles[tile1, (int)TILE.NOT_SIDE_0 + n];
+            int nNotSlot = _tiles[tile2, (int)TILE.NOT_SIDE_0 + (n + 2) % 4];
+            
+            return sSlot == nSlot && 
+                   (sNotSlot == 0 || nNotSlot == 0 || sNotSlot != nNotSlot);
         }
-
-        return match;
     }
 
-    private bool Match(int p, IReadOnlyList<int> top, IReadOnlyList<int> bot)
+    private static float CalcEntropy(int cell, NativeArrayXD<ushort> wave, NativeArrayXD<int> tiles, int waveHeight, Vector3 start)
     {
-        if (_tiles[p, (int)TILE.BOT_0] != (ushort)bot[0]) return false;
-        if (_tiles[p, (int)TILE.BOT_1] != (ushort)bot[1]) return false;
-        if (_tiles[p, (int)TILE.BOT_2] != (ushort)bot[2]) return false;
-        if (_tiles[p, (int)TILE.BOT_3] != (ushort)bot[3]) return false;
-        if (_tiles[p, (int)TILE.TOP_0] != (ushort)top[0]) return false;
-        if (_tiles[p, (int)TILE.TOP_1] != (ushort)top[1]) return false;
-        if (_tiles[p, (int)TILE.TOP_2] != (ushort)top[2]) return false;
-        return _tiles[p, (int)TILE.TOP_3] == (ushort)top[3];
+        float sumOfWeights = 0.0f;
+        float sumOfWeightsLogWeights = 0.0f;
+        for (int i = 0; i < waveHeight; i++)
+        {
+            if (wave[cell, i] == 0)
+                continue;
+
+            float p = tiles[i, (int)TILE.WEIGHT] / WEIGHT_TO_INT;
+            sumOfWeights += p;
+            sumOfWeightsLogWeights += p * Mathf.Log(p);
+        }
+        float entropy = Mathf.Log(sumOfWeights) - sumOfWeightsLogWeights / sumOfWeights;
+        return entropy;
     }
 }
