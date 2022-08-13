@@ -6,7 +6,9 @@ using UnityEngine;
 public class BaseTile : ScriptableObject
 {
     [SerializeField] public Mesh Mesh;
+    [SerializeField] public Vector3 MeshOffset;
     [SerializeField] public Material[] Materials;
+    [SerializeField] public BaseTileComposite Composite;
     [SerializeField] public int Top;
     [SerializeField] public int Right;
     [SerializeField] public int Bottom;

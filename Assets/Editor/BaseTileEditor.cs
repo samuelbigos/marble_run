@@ -29,8 +29,8 @@ public class BaseTileEditor : UnityEditor.Editor
         if (GUILayout.Button("Update Name"))
         {
             string path = AssetDatabase.GetAssetPath(serializedObject.targetObject);
-            AssetDatabase.RenameAsset(path,
-                $"{_mesh.objectReferenceValue.name}_{_top.intValue}{_right.intValue}{_bottom.intValue}{_left.intValue}");
+            string meshName = _mesh.objectReferenceValue != null ? _mesh.objectReferenceValue.name : "null";
+            AssetDatabase.RenameAsset(path, $"{meshName}_{_top.intValue}{_right.intValue}{_bottom.intValue}{_left.intValue}");
         }
     }
 }

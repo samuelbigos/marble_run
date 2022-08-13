@@ -12,7 +12,7 @@ public class World : MonoBehaviour
 {
     [SerializeField] private TileDatabase _tileDatabase;
     [SerializeField] private Grid _grid;
-    [SerializeField] private WFCBase _wfc;
+    [SerializeField] private WFC _wfc;
     [SerializeField] private TileFactory _tileFactory;
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private PickingRenderer _pickingCube;
@@ -35,13 +35,16 @@ public class World : MonoBehaviour
     void Start()
     {
         _grid.Create();
-        _wfc.Setup(_grid, _tileDatabase.Tiles);
+        _tileDatabase.Init();
+        _wfc.Setup(_grid, _tileDatabase.Tiles, _tileDatabase.Composites);
         _tileFactory.Init(_grid);
         
         _errorCubeA = transform.Find("ErrorCubeA").GetComponent<MeshFilter>();
         _errorCubeB = transform.Find("ErrorCubeB").GetComponent<MeshFilter>();
 
         _pickingCube = Instantiate(_pickingCube, transform);
+
+        _mainCamera.transform.position += (Vector3)_grid.GridSize * _grid.CellSize * 0.5f;
     }
 
     private void Update()
@@ -85,29 +88,23 @@ public class World : MonoBehaviour
         {
             _wfcDelayTimer = WFCStepDelay;
 
-            WFCBase.StepResult result = _wfc.Step(out int lastCollapse, out int collapsedPrototype, out int incompatibleStack, out int incompatibleNeighbor);
+            WFC.StepResult result = _wfc.Step(out List<(int, int)> collapses, out int incompatibleStack, out int incompatibleNeighbor);
 
             switch (result)
             {
-                case WFCBase.StepResult.WFCInProgress:
+                case WFC.StepResult.WFCInProgress:
                     wfcSteps++;
                     break;
-                case WFCBase.StepResult.WFCFinished:
+                case WFC.StepResult.WFCFinished:
                     _wfcFinished = true;
                     break;
-                case WFCBase.StepResult.WFCReset:
-                    break;
-                case WFCBase.StepResult.WFCBacktrackLimit:
-                    _wfcFinished = true;
-                    Debug.LogError("WFC backtrack limit reached.");
-                    break;
-                case WFCBase.StepResult.WFCPropagateError:
-                    DrawErrorCube(_errorCubeB, new List<int> { incompatibleStack });
+                case WFC.StepResult.WFCPropagateError:
                     DrawErrorCube(_errorCubeA, new List<int> { incompatibleNeighbor });
+                    DrawErrorCube(_errorCubeB, new List<int> { incompatibleStack });
                     _wfcFinished = true;
                     Debug.LogError($"Could not find compatible tile for cell {incompatibleStack}.");
                     break;
-                case WFCBase.StepResult.WFCCollapseError:
+                case WFC.StepResult.WFCCollapseError:
                     _wfcFinished = true;
                     Debug.LogError("Error in WFC.");
                     break;
@@ -117,14 +114,16 @@ public class World : MonoBehaviour
                     break;
             }
 
-            if (result != WFCBase.StepResult.WFCCollapseError &&
-                result != WFCBase.StepResult.WFCFinished)
+            if (result == WFC.StepResult.WFCInProgress)
             {
-                lastCollapseQueue.Add(lastCollapse);
-                collapsedProtQueue.Add(collapsedPrototype);
-                DrawErrorCube(_errorCubeA, new List<int> { lastCollapse });
-                
-                //Debug.Log($"Collapsed cell {lastCollapse} with tile {collapsedPrototype}.");
+                List<int> cubes = new();
+                foreach ((int, int) collapse in collapses)
+                {
+                    lastCollapseQueue.Add(collapse.Item1);
+                    collapsedProtQueue.Add(collapse.Item2);
+                    cubes.Add(collapse.Item1);
+                }
+                DrawErrorCube(_errorCubeA, cubes);
             }
 
             if (_wfcFinished)
@@ -163,34 +162,42 @@ public class World : MonoBehaviour
         List<Vector3> verts = new();
         List<int> indices = new();
 
-        //Vector3[] gridVerts = _grid.VoxelVerts;
+        List<Vector3> cellVerts = new List<Vector3>();
+        cellVerts.Add(new Vector3(-1.0f, -1.0f, -1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(1.0f, -1.0f, -1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(1.0f, -1.0f, 1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(-1.0f, -1.0f, 1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(-1.0f, 1.0f, -1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(1.0f, 1.0f, -1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(1.0f, 1.0f, 1.0f) * _grid.CellSize * 0.5f);
+        cellVerts.Add(new Vector3(-1.0f, 1.0f, 1.0f) * _grid.CellSize * 0.5f);
+        
         foreach (int cell in cells)
         {
             if (cell == -1)
                 continue;
+
+            Vector3 pos = Grid.XYZFromIndex(cell, _grid.GridSize) * (int) _grid.CellSize;
+
+            foreach (Vector3 v in cellVerts)
+            {
+                verts.Add(pos + v);
+            }
             
-            // VoxelGrid.Cell gridCell = _grid.Cells[cell];
-            // for (int i = 0; i < 4; i++)
-            // {
-            //     verts.Add(gridVerts[gridCell.vTop[i]]);
-            //     indices.Add(verts.Count - 1);
-            //     verts.Add(gridVerts[gridCell.vBot[i]]);
-            //     indices.Add(verts.Count - 1);
-            // }
-            // for (int i = 0; i < 4; i++)
-            // {
-            //     verts.Add(gridVerts[gridCell.vTop[i]]);
-            //     indices.Add(verts.Count - 1);
-            //     verts.Add(gridVerts[gridCell.vTop[(i + 1) % 4]]);
-            //     indices.Add(verts.Count - 1);
-            // }
-            // for (int i = 0; i < 4; i++)
-            // {
-            //     verts.Add(gridVerts[gridCell.vBot[i]]);
-            //     indices.Add(verts.Count - 1);
-            //     verts.Add(gridVerts[gridCell.vBot[(i + 1) % 4]]);
-            //     indices.Add(verts.Count - 1);
-            // }
+            indices.Add(0); indices.Add(1);
+            indices.Add(1); indices.Add(2);
+            indices.Add(2); indices.Add(3);
+            indices.Add(3); indices.Add(0);
+            
+            indices.Add(4); indices.Add(5);
+            indices.Add(5); indices.Add(6);
+            indices.Add(6); indices.Add(7);
+            indices.Add(7); indices.Add(4);
+            
+            indices.Add(0); indices.Add(4);
+            indices.Add(1); indices.Add(5);
+            indices.Add(2); indices.Add(6);
+            indices.Add(3); indices.Add(7);
         }
         mesh.vertices = verts.ToArray();
         mesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);

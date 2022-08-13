@@ -4,8 +4,8 @@ using UnityEditor;
 
 public class TileInstance : MonoBehaviour
 {
-    private MeshFilter _meshFilter;
-    private MeshRenderer _meshRenderer;
+    [SerializeField] private MeshFilter MeshFilter;
+    [SerializeField] private MeshRenderer MeshRenderer;
 
     private TileDatabase _tileDatabase = null;
     private Grid _grid = null;
@@ -15,35 +15,39 @@ public class TileInstance : MonoBehaviour
 
     public Mesh GetMesh()
     {
-        return _meshFilter.mesh;
+        return MeshFilter.mesh;
     }
 
-    public void Init(TileDatabase.Tile tile, int cellIdx, Grid grid)
+    public void Init(TileDatabase.Tile tile, int cellIdx, Grid grid, Vector3 position)
     {
-        _meshFilter = GetComponent<MeshFilter>();
-        _meshRenderer = GetComponent<MeshRenderer>();
+        MeshRenderer.transform.position += tile.MeshOffset;
 
         _tile = tile;
         name = tile.Name;
 
         if (tile.Materials != null)
         {
-            _meshRenderer.sharedMaterials = tile.Materials;
+            MeshRenderer.sharedMaterials = tile.Materials;
         }
         if (tile.Mesh)
         {
-            _meshFilter.sharedMesh = tile.Mesh;
+            MeshFilter.sharedMesh = tile.Mesh;
         }
 
         _grid = grid;
         Transform cachedTransform = transform;
         if (grid)
         {
-            cachedTransform.position = (Vector3)_grid.XYZFromIndex(cellIdx) * grid.CellSize 
-                                       + (Vector3.one * (grid.CellSize * 0.5f)) 
-                                       - (grid.GridSizeF * (grid.CellSize * 0.5f));
+            cachedTransform.position = (Vector3)Grid.XYZFromIndex(cellIdx, grid.GridSize) * grid.CellSize;
+                                       // + (Vector3.one * (grid.CellSize * 0.5f)) 
+                                       // - (grid.GridSizeF * (grid.CellSize * 0.5f));
             cachedTransform.localScale = Vector3.one * (grid.CellSize / tile.Size);
         }
+        else
+        {
+            cachedTransform.position = position;
+        }
+        
         cachedTransform.rotation = Quaternion.Euler(0.0f, 90.0f * tile.Rot, 0.0f);
 
         _cellIdx = cellIdx;
@@ -87,16 +91,16 @@ public class TileInstance : MonoBehaviour
             GUIStyle style = new GUIStyle();
             style.normal.textColor = Color.magenta;
 
-            if (Application.isPlaying)
+            if (_tile != null)
             {
                 //Handles.Label(transform.position, $"Coord: {_grid.XYZFromIndex(_cellIdx)}", style);
                 //Handles.Label(transform.position + top[0] * 0.25f, $"Idx: {_cellIdx}", style);
+                
+                Handles.Label(transform.position + Vector3.forward * 0.5f, $"{_tile.Sides[0]}", style);
+                Handles.Label(transform.position + Vector3.right * 0.5f, $"{_tile.Sides[1]}", style);
+                Handles.Label(transform.position - Vector3.forward * 0.5f, $"{_tile.Sides[2]}", style);
+                Handles.Label(transform.position - Vector3.right * 0.5f, $"{_tile.Sides[3]}", style);
             }
-            
-            Handles.Label(transform.position + Vector3.forward * 0.5f, $"{_tile.Sides[0]}", style);
-            Handles.Label(transform.position + Vector3.right * 0.5f, $"{_tile.Sides[1]}", style);
-            Handles.Label(transform.position - Vector3.forward * 0.5f, $"{_tile.Sides[2]}", style);
-            Handles.Label(transform.position - Vector3.right * 0.5f, $"{_tile.Sides[3]}", style);
             
             // Handles.Label(p + v[_cell.vBot[i]] + (v[_cell.vBot[(i + 1) % 4]] + v[_cell.vBot[(i + 3) % 4]] - v[_cell.vBot[i]] * 2.0f) * 0.15f, $"{_prot._cornerMasksBot[i, 0]}", style);
             // Handles.Label(p + v[_cell.vBot[i]] + (v[_cell.vTop[i]] + v[_cell.vBot[(i + 3) % 4]] - v[_cell.vBot[i]] * 2.0f) * 0.15f, $"{_prot._cornerMasksBot[i, 1]}", style);
