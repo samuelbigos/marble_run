@@ -44,7 +44,7 @@ public class Grid : MonoBehaviour
     #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (GridSize.x * GridSize.y * GridSize.z > 100)
+        if (GridSize.x * GridSize.y * GridSize.z > 1000)
             return;
         
         GUIStyle style = new GUIStyle();

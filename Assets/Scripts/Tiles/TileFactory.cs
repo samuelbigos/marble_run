@@ -133,7 +133,7 @@ public class TileFactory : MonoBehaviour
         {
             tileInstance = FetchFromPool(cellIdx);
         }
-        tileInstance.Init(tile, cellIdx, grid, Vector3.zero);
+        tileInstance.Init(tile, cellIdx, grid, Vector3.zero, transform);
         return true;
     }
 

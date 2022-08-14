@@ -36,7 +36,8 @@ public class World : MonoBehaviour
     {
         _grid.Create();
         _tileDatabase.Init();
-        _wfc.Setup(_grid, _tileDatabase.Tiles, _tileDatabase.Composites);
+        Vector3Int start = new Vector3Int((int)(_grid.GridSize.x * 0.5f), _grid.GridSize.y - 1, (int)(_grid.GridSize.z * 0.5f));
+        _wfc.Setup(_grid, _tileDatabase.Tiles, _tileDatabase.Composites, start);
         _tileFactory.Init(_grid);
         
         _errorCubeA = transform.Find("ErrorCubeA").GetComponent<MeshFilter>();

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9823a12e8595a5d46a82b7cbdda27c64, type: 3}
+  m_Name: bottom
+  m_EditorClassIdentifier: 
+  Mesh: {fileID: -4353465629058489213, guid: 76aea6aa07f7fd445bcde9695a4a9fed, type: 3}
+  MeshOffset: {x: 0, y: 0, z: 0}
+  MeshRotation: 1
+  Composite: {fileID: 11400000, guid: 286fafdd1a92da542996c5bb55d89f6e, type: 2}
+  Weight: 0.01
+  Match: 000000000000000000000000010000000000000000000000
+  NotMatch: 00000000000000000000000000000000
+  Starter: 0
+  FlipMaterials: 1

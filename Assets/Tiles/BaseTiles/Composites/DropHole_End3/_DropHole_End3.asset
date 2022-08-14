@@ -10,12 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: da04651455cee7e42aa4930ae56207bf, type: 3}
-  m_Name: ramp_start
+  m_Name: _DropHole_End3
   m_EditorClassIdentifier: 
-  Size: {x: 0, y: 0, z: 0}
   BaseTiles:
-  - {fileID: 11400000, guid: 391d7507dde03cf469ac39f6068c04e5, type: 2}
-  - {fileID: 11400000, guid: cdabf6e17215a86428f5e016f8702dde, type: 2}
+  - {fileID: 11400000, guid: 9c33bf87b7fc63240852d2dd74551ea8, type: 2}
+  - {fileID: 11400000, guid: a7c6ada2669385540b409d780d203041, type: 2}
   BaseTileOffsets:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 1, z: 0}

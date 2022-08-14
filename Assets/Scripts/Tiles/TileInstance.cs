@@ -6,21 +6,21 @@ public class TileInstance : MonoBehaviour
 {
     [SerializeField] private MeshFilter MeshFilter;
     [SerializeField] private MeshRenderer MeshRenderer;
-
-    private TileDatabase _tileDatabase = null;
-    private Grid _grid = null;
-    [SerializeField] private int _tileSize;
     [SerializeField] private TileDatabase.Tile _tile;
     [SerializeField] private int _cellIdx;
+
+    private int _tileSize = 1;
 
     public Mesh GetMesh()
     {
         return MeshFilter.mesh;
     }
 
-    public void Init(TileDatabase.Tile tile, int cellIdx, Grid grid, Vector3 position)
+    public void Init(TileDatabase.Tile tile, int cellIdx, Grid grid, Vector3 position, Transform parent)
     {
+        transform.parent = parent;
         MeshRenderer.transform.position = tile.MeshOffset;
+        MeshRenderer.transform.rotation = Quaternion.Euler(0.0f, 90.0f * tile.MeshRotation, 0.0f);
 
         _tile = tile;
         name = tile.Name;
@@ -34,7 +34,6 @@ public class TileInstance : MonoBehaviour
             MeshFilter.sharedMesh = tile.Mesh;
         }
 
-        _grid = grid;
         Transform cachedTransform = transform;
         if (grid)
         {
@@ -56,12 +55,6 @@ public class TileInstance : MonoBehaviour
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (!Application.isPlaying && !_tileDatabase)
-        {
-            _tileDatabase = transform.parent.gameObject.GetComponent<TileDatabase>();
-        }
-        _tileSize = !Application.isPlaying ? _tileDatabase.TileSize : _tile.Size;
-
         float o = _tileSize * 0.5f;
         Vector3 p = transform.position;
         
