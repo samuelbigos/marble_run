@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da04651455cee7e42aa4930ae56207bf, type: 3}
+  m_Name: _Curve_L
+  m_EditorClassIdentifier: 
+  BaseTiles:
+  - {fileID: 11400000, guid: d4c901d1dc0942f41b29de0fd6a38fb2, type: 2}
+  - {fileID: 11400000, guid: 405994b67ea64be4498fcae20f622f82, type: 2}
+  - {fileID: 11400000, guid: 2d9335512397aea4090c1ec13072927a, type: 2}
+  - {fileID: 11400000, guid: 777dc9c34b8f2324381af919c685e5ae, type: 2}
+  - {fileID: 11400000, guid: 1601e08e2c93ff642bdf5e8d055a0b96, type: 2}
+  BaseTileOffsets:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
+  - {x: 1, y: 0, z: 1}
+  - {x: 1, y: 0, z: 2}
+  - {x: 2, y: 0, z: 2}
+  Disabled: 0

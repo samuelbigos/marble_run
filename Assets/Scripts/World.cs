@@ -73,9 +73,6 @@ public class World : MonoBehaviour
         
         _mainCamera.transform.position += (Vector3)_grid.GridSize * _grid.CellSize * 0.5f;
 
-        _camOriginalPos = _mainCamera.transform.position;
-        _camOriginalRot = _mainCamera.transform.rotation;
-
         _sizeXSlider.value = _gridSize.x;
         _sizeYSlider.value = _gridSize.y;
         _sizeZSlider.value = _gridSize.z;
@@ -103,6 +100,12 @@ public class World : MonoBehaviour
         _errorCubeB = transform.Find("ErrorCubeB").GetComponent<MeshFilter>();
         _errorCubeA.gameObject.SetActive(false);
         _errorCubeB.gameObject.SetActive(false);
+        
+        Vector3 camPos = _mainCamera.transform.position;
+        camPos.y = _gridSize.y * _grid.CellSize + 10.0f;
+        _mainCamera.transform.position = camPos;
+        _camOriginalPos = _mainCamera.transform.position;
+        _camOriginalRot = _mainCamera.transform.rotation;
     }
 
     private void Update()
@@ -175,6 +178,8 @@ public class World : MonoBehaviour
     {
         _wfcFinished = false;
         _wfcStarted = Time.realtimeSinceStartupAsDouble;
+        
+        
     }
 
     private void UpdateWFC()
@@ -249,7 +254,7 @@ public class World : MonoBehaviour
         {
             if (wfcSteps > 0)
             {
-                Debug.Log($"{wfcSteps} WFC steps in {Time.realtimeSinceStartupAsDouble - wfcStartTime} this frame.");
+                //Debug.Log($"{wfcSteps} WFC steps in {Time.realtimeSinceStartupAsDouble - wfcStartTime} this frame.");
             }
             _wfcTimer += Time.realtimeSinceStartupAsDouble - wfcStartTime;
             if (_wfcFinished)

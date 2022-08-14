@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: da04651455cee7e42aa4930ae56207bf, type: 3}
-  m_Name: S_Curve
+  m_Name: _Split_Left
   m_EditorClassIdentifier: 
   BaseTiles:
-  - {fileID: 11400000, guid: 83978b449baf22d4b87a71ca17c307a7, type: 2}
-  - {fileID: 11400000, guid: a2ad6a5c09e9bdf44ba4ae586f963638, type: 2}
-  - {fileID: 11400000, guid: 389abfeacbbc5bf4f9c9a3431fb27d5d, type: 2}
-  - {fileID: 11400000, guid: c5d38590d2dcb204fa7a3e36cc700ac2, type: 2}
+  - {fileID: 11400000, guid: 66b5647dae00adf49b4b65c81f8956ed, type: 2}
+  - {fileID: 11400000, guid: 71c4f3aaf98c0e9408a56be537a47035, type: 2}
+  - {fileID: 11400000, guid: 9fc0ae369bc1aa145824f0bda98e2e53, type: 2}
+  - {fileID: 11400000, guid: 0caecd36f4443754491c0f67f03936e3, type: 2}
   BaseTileOffsets:
   - {x: 0, y: 0, z: 0}
   - {x: 1, y: 0, z: 0}

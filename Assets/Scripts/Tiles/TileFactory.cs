@@ -28,22 +28,10 @@ public class TileFactory : MonoBehaviour
         new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
     };
 
-    private const int TEMP_CELL_MESH_BUFFER_SIZE = 2048;
-    private NativeArray<VertexDesc> _protMeshVerts;
-    private NativeArray<ushort> _protMeshIndices;
-    private NativeArray<Vector3> _sdfVerts;
-    private NativeArray<Vector3> _cornerVertsBot;
-    private NativeArray<Vector3> _cornerVertsTop;
-
-    private const int TEMP_PROT_MESH_BUFFER_SIZE = 1024;
-    private NativeArray<Vector3> _meshVerts;
-    private NativeArray<Vector3> _meshNormals;
-    private NativeArray<Vector2> _meshUvs;
-    private NativeArray<ushort> _meshIndices;
-
     protected Dictionary<int, TileInstance> _cellToTile = new Dictionary<int, TileInstance>();
     protected Dictionary<int, int> _cellToProt = new Dictionary<int, int>();
     private List<TileInstance> _tilePoolUnused;
+    private bool _initialized;
 
     private readonly ProfilerMarker _profileCreateTile = new ProfilerMarker("TileFactory.CreateTile");
     private readonly ProfilerMarker _profileActivateNewTile = new ProfilerMarker("TileFactory.ActivateNewTile");
@@ -51,33 +39,27 @@ public class TileFactory : MonoBehaviour
 
     private void Awake()
     {
-        _protMeshVerts = new NativeArray<VertexDesc>(TEMP_CELL_MESH_BUFFER_SIZE, Allocator.Persistent);
-        _protMeshIndices = new NativeArray<ushort>(TEMP_CELL_MESH_BUFFER_SIZE, Allocator.Persistent);
-        _sdfVerts = new NativeArray<Vector3>(TEMP_CELL_MESH_BUFFER_SIZE, Allocator.Persistent);
-        _cornerVertsBot = new NativeArray<Vector3>(4, Allocator.Persistent);
-        _cornerVertsTop = new NativeArray<Vector3>(4, Allocator.Persistent);
-
-        _meshVerts = new NativeArray<Vector3>(TEMP_PROT_MESH_BUFFER_SIZE, Allocator.Persistent);
-        _meshNormals = new NativeArray<Vector3>(TEMP_PROT_MESH_BUFFER_SIZE, Allocator.Persistent);
-        _meshUvs = new NativeArray<Vector2>(TEMP_PROT_MESH_BUFFER_SIZE, Allocator.Persistent);
-        _meshIndices = new NativeArray<ushort>(TEMP_PROT_MESH_BUFFER_SIZE, Allocator.Persistent);
     }
 
     protected void OnDestroy()
     {
-        _protMeshVerts.Dispose();
-        _protMeshIndices.Dispose();
-        _sdfVerts.Dispose();
-        _cornerVertsBot.Dispose();
-        _cornerVertsTop.Dispose();
-        _meshVerts.Dispose();
-        _meshNormals.Dispose();
-        _meshUvs.Dispose();
-        _meshIndices.Dispose();
+        Dispose();
+    }
+
+    private void Dispose()
+    {
+        if (_initialized)
+        {
+        }
+        
+        _cellToProt.Clear();
+        _cellToTile.Clear();
     }
 
     public void Init(Grid grid)
     {
+        Dispose();
+        
         for (int c = transform.childCount - 1; c >= 0; c--)
         {
             Destroy(transform.GetChild(c).gameObject);
@@ -92,6 +74,8 @@ public class TileFactory : MonoBehaviour
             _tilePoolUnused.Add(tile);
             tile.gameObject.SetActive(false);
         }
+
+        _initialized = true;
     }
 
     public void ResetTiles()

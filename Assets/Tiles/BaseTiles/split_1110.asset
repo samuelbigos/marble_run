@@ -16,9 +16,10 @@ MonoBehaviour:
   MeshOffset: {x: 0, y: 0, z: 0}
   MeshRotation: 0
   Composite: {fileID: 0}
-  Weight: 1
+  Weight: 0.1
   Match: 010000000100000001000000000000000000000000000000
   NotMatch: 00000000000000000000000000000000
   Starter: 0
+  Ender: 0
   FlipMaterials: 1
-  Disabled: 1
+  Disabled: 0

@@ -123,7 +123,8 @@ public class WFC : MonoBehaviour
 
         _startCell = Grid.IndexFromXYZ(startCell, grid.GridSize, out bool _);
         _endCell = Grid.IndexFromXYZ(endTile, grid.GridSize, out bool _);
-        
+
+        _stackSize = 0;
         _gridSize = grid.GridSize;
         C = grid.GridSize.x * grid.GridSize.y * grid.GridSize.z;
         T = tiles.Count;
@@ -325,7 +326,7 @@ public class WFC : MonoBehaviour
 
         _seed = System.DateTime.Now.Millisecond;
         Debug.Log($"WFC Seed: {_seed}");
-        //_seed = 22;
+        //_seed = 8;
         _rng = new System.Random(_seed);
 
         _initialised = true;
