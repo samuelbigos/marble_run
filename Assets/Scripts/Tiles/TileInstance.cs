@@ -6,6 +6,7 @@ public class TileInstance : MonoBehaviour
 {
     [SerializeField] private MeshFilter MeshFilter;
     [SerializeField] private MeshRenderer MeshRenderer;
+    [SerializeField] private MeshCollider Collider;
     [SerializeField] private TileDatabase.Tile _tile;
     [SerializeField] private int _cellIdx;
 
@@ -22,6 +23,8 @@ public class TileInstance : MonoBehaviour
         MeshRenderer.transform.position = tile.MeshOffset;
         MeshRenderer.transform.rotation = Quaternion.Euler(0.0f, 90.0f * tile.MeshRotation, 0.0f);
 
+        Collider.sharedMesh = tile.Mesh;
+            
         _tile = tile;
         name = tile.Name;
 

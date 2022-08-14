@@ -8,7 +8,7 @@ using Utils;
 
 public class Grid : MonoBehaviour
 {
-    public Vector3Int GridSize = new(10, 10, 10);
+    public Vector3Int GridSize => _gridSize;
     public Vector3 GridSizeF => GridSize;
     public float CellSize;
 
@@ -16,11 +16,13 @@ public class Grid : MonoBehaviour
     [SerializeField] private GameObject _debugVoxelSpherePrefab;
 
     private Dictionary<Vector3Int, GameObject> _debugVoxelSpheres = new();
+    private Vector3Int _gridSize;
 
     private readonly ProfilerMarker _profileBoxIntersection = new("GridBase.BoxIntersection");
 
-    public void Create()
+    public void Create(Vector3Int gridSize)
     {
+        _gridSize = gridSize;
     }
 
     public static int IndexFromXYZ(Vector3Int p, Vector3Int gridSize, out bool outOfBounds)

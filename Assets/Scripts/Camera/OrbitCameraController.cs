@@ -1,8 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
+using Utils;
+using Quaternion = UnityEngine.Quaternion;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 public class OrbitCameraController : MonoBehaviour
 {
@@ -12,15 +13,15 @@ public class OrbitCameraController : MonoBehaviour
     [SerializeField] private float _deceleration = 5.0f;
     [SerializeField] private float _minZoom;
     [SerializeField] private float _maxZoom;
-    [SerializeField] private float _fov = 25.0f;
     [SerializeField] private float _rotSpeed = 0.1f;
     [SerializeField] private float _rotDeceleration = 10.0f;
+    [SerializeField] private float _cameraTransitionTime = 2.0f;
 
     [SerializeField] private Camera _camera;
     [SerializeField] private GameObject _gimbalH;
     [SerializeField] private GameObject _gimbalV;
     [SerializeField] private GameObject _gimbalA;
-    
+
     private Vector2 _velocity;
     private float _zoomVelocity;
     private float _rotateVelocity;
@@ -31,11 +32,26 @@ public class OrbitCameraController : MonoBehaviour
     
     private Transform _transform;
     private Transform _cameraTransform;
+
+    private bool _cameraTransitioning;
+    private float _cameraTransitionTimer;
+    private Vector3 _camStartPos;
+    private Quaternion _camStartRot;
     
     private void Start()
     {
+    }
+
+    public void OnEnable()
+    {
         _transform = transform;
         _cameraTransform = _camera.transform;
+        
+        _cameraTransitioning = true;
+        _cameraTransitionTimer = _cameraTransitionTime;
+
+        _camStartPos = _cameraTransform.position;
+        _camStartRot = _cameraTransform.rotation;
         
         Vector3 newPos = _transform.localPosition;
         newPos.z = -(_maxZoom + _minZoom) * 0.5f;
@@ -52,6 +68,7 @@ public class OrbitCameraController : MonoBehaviour
         _gimbalH.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), _velocity.x * _panSpeed, Space.Self);
 
         _gimbalVRot = Mathf.Clamp(_gimbalVRot + _velocity.y * -_panSpeed, -90.0f, 90.0f);
+        _gimbalVRot = 45.0f;
         
         _gimbalV.transform.localPosition = Vector3.zero;
         _gimbalV.transform.localRotation = Quaternion.identity;
@@ -66,11 +83,26 @@ public class OrbitCameraController : MonoBehaviour
         _zoomVelocity = Mathf.Lerp(_zoomVelocity, 0.0f, Time.deltaTime * _zoomDeceleration);
         
         // _transform.LookAt(_gimbalA.transform.position, _gimbalA.transform.position.normalized);
-
-        _cameraTransform.position = _transform.position;
-        _cameraTransform.rotation = _transform.rotation;
-        _camera.fieldOfView = _fov;
         
+        if (_cameraTransitioning)
+        {
+            float t = Mathf.Clamp01(1.0f - _cameraTransitionTimer / _cameraTransitionTime);
+            t = Easing.InOut(t);
+            _cameraTransform.position = Vector3.Lerp(_camStartPos, _transform.position, t);
+            _cameraTransform.rotation = Quaternion.Lerp(_camStartRot, _transform.rotation, t);
+
+            _cameraTransitionTimer -= Time.deltaTime;
+            if (_cameraTransitionTimer < 0.0f)
+            {
+                _cameraTransitioning = false;
+            }
+        }
+        else
+        {
+            _cameraTransform.position = _transform.position;
+            _cameraTransform.rotation = _transform.rotation;
+        }
+
         // Rotation
         if (_doRot)
         {

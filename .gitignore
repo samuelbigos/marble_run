@@ -8,5 +8,6 @@ UserSettings/
 WebGL/
 Temp/
 LocalPackages/
+Builds/
 *.csproj
 *.sln

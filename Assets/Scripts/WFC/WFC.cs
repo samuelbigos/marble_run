@@ -87,26 +87,39 @@ public class WFC : MonoBehaviour
     private static readonly int MAX_COLLAPSES = 20;
     
     private System.Random _rng;
+    private bool _initialised;
 
     public void OnDestroy()
     {
-        _neighbors.Dispose();
-        _tiles.Dispose();
-        _stack.Dispose();
-        _wave.Dispose();
-        _waveCache.Dispose();
-        _entropy.Dispose();
-        _entropyCache.Dispose();
-        _collapsed.Dispose();
-        _return.Dispose();
-        _incompatible.Dispose();
-        _compositeTiles.Dispose();
-        _compositeOffsets.Dispose();
+        Dispose();
+    }
+
+    private void Dispose()
+    {
+        if (_initialised)
+        {
+            _neighbors.Dispose();
+            _tiles.Dispose();
+            _stack.Dispose();
+            _wave.Dispose();
+            _waveCache.Dispose();
+            _entropy.Dispose();
+            _entropyCache.Dispose();
+            _collapsed.Dispose();
+            _return.Dispose();
+            _incompatible.Dispose();
+            _compositeTiles.Dispose();
+            _compositeOffsets.Dispose();
+        }
+
+        _initialised = false;
     }
 
     public void Setup(Grid grid, List<TileDatabase.Tile> tiles, List<TileDatabase.Composite> composites, Vector3Int startCell, Vector3Int endTile)
     {
         _profileSetup.Begin();
+        
+        Dispose();
 
         _startCell = Grid.IndexFromXYZ(startCell, grid.GridSize, out bool _);
         _endCell = Grid.IndexFromXYZ(endTile, grid.GridSize, out bool _);
@@ -282,10 +295,10 @@ public class WFC : MonoBehaviour
                 // }
             }
 
-            // if (didBanTile)
-            // {
-            //     _stack[_stackSize++] = c;
-            // }
+            if (didBanTile)
+            {
+                _stack[_stackSize++] = c;
+            }
 
             _entropy[c] = CalcEntropy(c, _wave, _tiles, T, _tileWeights);
             
@@ -312,8 +325,10 @@ public class WFC : MonoBehaviour
 
         _seed = System.DateTime.Now.Millisecond;
         Debug.Log($"WFC Seed: {_seed}");
-        //_seed = 455;
+        //_seed = 22;
         _rng = new System.Random(_seed);
+
+        _initialised = true;
         
         _profileSetup.End();
     }
@@ -549,7 +564,7 @@ public class WFC : MonoBehaviour
             _collapsed[cell] = true;
             _stack[_stackSize++] = cell;
             
-            Debug.Log($"Collapsing cell [{cell}] with tile [{tile}]");
+            //Debug.Log($"Collapsing cell [{cell}] with tile [{tile}]");
 
             _collapsedCells[_collapses] = cell;
             _collapsedTiles[_collapses] = tile;

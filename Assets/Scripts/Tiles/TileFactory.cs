@@ -78,6 +78,11 @@ public class TileFactory : MonoBehaviour
 
     public void Init(Grid grid)
     {
+        for (int c = transform.childCount - 1; c >= 0; c--)
+        {
+            Destroy(transform.GetChild(c).gameObject);
+        }
+
         _grid = grid;
         _tilePoolUnused = new List<TileInstance>();
         int poolSize = _grid.GridSize.x * _grid.GridSize.y * _grid.GridSize.z;
