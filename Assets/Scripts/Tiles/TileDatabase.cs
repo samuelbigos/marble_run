@@ -30,6 +30,7 @@ namespace Tiles
             public int Rot;
             public float Weight;
             public bool Starter;
+            public bool Ender;
             public Composite Composite;
             public int TileIndex;
         }
@@ -226,8 +227,12 @@ namespace Tiles
                 Materials = new[] {t._matOuter, t._matInner},
                 Weight = baseTile.Weight,
                 Starter = baseTile.Starter,
+                Ender = baseTile.Ender,
                 Match = new int[6]
             };
+            if (baseTile.Mesh == null)
+                tile.Mesh = null;
+            
             if (baseTile.FlipMaterials)
             {
                 tile.Materials = new[] {tile.Materials[1], tile.Materials[0]};

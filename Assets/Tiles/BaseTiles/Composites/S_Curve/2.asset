@@ -10,15 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9823a12e8595a5d46a82b7cbdda27c64, type: 3}
-  m_Name: TL
+  m_Name: 2
   m_EditorClassIdentifier: 
-  Mesh: {fileID: 7824271557591217627, guid: dd8df4521b79bfb4e906b387ffa5d3e2, type: 3}
-  MeshOffset: {x: 0.5, y: 0, z: -0.5}
+  Mesh: {fileID: 0}
+  MeshOffset: {x: 0, y: 0, z: 0}
   MeshRotation: 0
-  Composite: {fileID: 11400000, guid: 8fb4b849fcb6d914e9b1c8272a22dfbb, type: 2}
+  Composite: {fileID: 11400000, guid: f0f9f5d7b8266094bb5723227c2517b2, type: 2}
   Weight: 1
   Match: 000000000000000000000000000000000000000000000000
   NotMatch: 00000000000000000000000000000000
   Starter: 0
+  Ender: 0
   FlipMaterials: 1
   Disabled: 0

@@ -37,7 +37,10 @@ namespace Editor
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 BaseTileComposite baseComposite = AssetDatabase.LoadAssetAtPath<BaseTileComposite>(path);
-                t.BaseTileComposites.Add(baseComposite);
+                if (!baseComposite.Disabled)
+                {
+                    t.BaseTileComposites.Add(baseComposite);
+                }
             }
             
             string[] tileGuids = AssetDatabase.FindAssets("t:BaseTile");
@@ -45,7 +48,10 @@ namespace Editor
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 BaseTile baseTile = AssetDatabase.LoadAssetAtPath<BaseTile>(path);
-                t.BaseTiles.Add(baseTile);
+                if (!baseTile.Disabled)
+                {
+                    t.BaseTiles.Add(baseTile);
+                }
             }
 
             t.Init(true);

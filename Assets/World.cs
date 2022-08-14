@@ -36,8 +36,11 @@ public class World : MonoBehaviour
     {
         _grid.Create();
         _tileDatabase.Init();
+        
         Vector3Int start = new Vector3Int((int)(_grid.GridSize.x * 0.5f), _grid.GridSize.y - 1, (int)(_grid.GridSize.z * 0.5f));
-        _wfc.Setup(_grid, _tileDatabase.Tiles, _tileDatabase.Composites, start);
+        Vector3Int end = new Vector3Int((int)(_grid.GridSize.x * 0.5f), 0, (int)(_grid.GridSize.z * 0.5f));
+        _wfc.Setup(_grid, _tileDatabase.Tiles, _tileDatabase.Composites, start, end);
+        
         _tileFactory.Init(_grid);
         
         _errorCubeA = transform.Find("ErrorCubeA").GetComponent<MeshFilter>();
@@ -77,8 +80,8 @@ public class World : MonoBehaviour
         int wfcSteps = 0;
         _wfcDelayTimer -= Time.deltaTime;
 
-        List<int> lastCollapseQueue = new List<int>();
-        List<int> collapsedProtQueue = new List<int>();
+        List<int> collapsedCellQueue = new List<int>();
+        List<int> collapsedTileQueue = new List<int>();
 
         double wfcStartTime = Time.realtimeSinceStartupAsDouble;
         if (_wfcStarted == 0.0f)
@@ -87,14 +90,11 @@ public class World : MonoBehaviour
         while ((wfcSteps < WFCStepsPerFrame && _wfcDelayTimer <= 0.0f)
                || ((WFCStepsPerFrame == -1) && Time.realtimeSinceStartupAsDouble < wfcStartTime + WFCTimeslice))
         {
-            _wfcDelayTimer = WFCStepDelay;
-
             WFC.StepResult result = _wfc.Step(out List<(int, int)> collapses, out int incompatibleStack, out int incompatibleNeighbor);
 
             switch (result)
             {
                 case WFC.StepResult.WFCInProgress:
-                    wfcSteps++;
                     break;
                 case WFC.StepResult.WFCFinished:
                     _wfcFinished = true;
@@ -115,16 +115,26 @@ public class World : MonoBehaviour
                     break;
             }
 
+            bool addedMesh = false;
             if (result != WFC.StepResult.WFCFinished && result != WFC.StepResult.WFCCollapseError)
             {
                 List<int> cubes = new();
                 foreach ((int, int) collapse in collapses)
                 {
-                    lastCollapseQueue.Add(collapse.Item1);
-                    collapsedProtQueue.Add(collapse.Item2);
+                    collapsedCellQueue.Add(collapse.Item1);
+                    collapsedTileQueue.Add(collapse.Item2);
                     cubes.Add(collapse.Item1);
+
+                    if (_tileFactory.TileHasMesh(collapse.Item2, _tileDatabase))
+                        addedMesh = true;
                 }
                 //DrawErrorCube(_errorCubeA, cubes);
+            }
+
+            if (addedMesh)
+            {
+                _wfcDelayTimer = WFCStepDelay;
+                wfcSteps++;
             }
 
             if (_wfcFinished)
@@ -145,12 +155,12 @@ public class World : MonoBehaviour
             }
         }
 
-        while (lastCollapseQueue.Count > 0 && collapsedProtQueue.Count > 0)
+        while (collapsedCellQueue.Count > 0 && collapsedTileQueue.Count > 0)
         {
-            int cell = lastCollapseQueue[0];
-            int prot = collapsedProtQueue[0];
-            lastCollapseQueue.RemoveAt(0);
-            collapsedProtQueue.RemoveAt(0);
+            int cell = collapsedCellQueue[0];
+            int prot = collapsedTileQueue[0];
+            collapsedCellQueue.RemoveAt(0);
+            collapsedTileQueue.RemoveAt(0);
             OnCellCollapsed(cell, prot);
         }
     }

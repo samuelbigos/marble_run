@@ -103,6 +103,12 @@ public class TileFactory : MonoBehaviour
         }
     }
 
+    public bool TileHasMesh(int tileIdx, TileDatabase tileDatabase)
+    {
+        TileDatabase.Tile tile = tileDatabase.Tiles[tileIdx];
+        return tile.Mesh != null;
+    }
+
     public bool SetTile(int cellIdx, int tileIdx, TileDatabase tileDatabase, Grid grid)
     {
         TileDatabase.Tile tile = tileDatabase.Tiles[tileIdx];

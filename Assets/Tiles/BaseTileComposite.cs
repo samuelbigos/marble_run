@@ -7,4 +7,5 @@ public class BaseTileComposite : ScriptableObject
 {
     [SerializeField] public BaseTile[] BaseTiles;
     [SerializeField] public Vector3Int[] BaseTileOffsets;
+    [SerializeField] public bool Disabled;
 }

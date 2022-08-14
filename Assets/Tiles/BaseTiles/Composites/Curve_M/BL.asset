@@ -15,9 +15,10 @@ MonoBehaviour:
   Mesh: {fileID: 0}
   MeshOffset: {x: 0, y: 0, z: 0}
   MeshRotation: 0
-  Composite: {fileID: 0}
+  Composite: {fileID: 11400000, guid: 8fb4b849fcb6d914e9b1c8272a22dfbb, type: 2}
   Weight: 1
-  Match: 000000000000000000000000000000000000000000000000
+  Match: 000000000000000001000000000000000000000000000000
   NotMatch: 00000000000000000000000000000000
   Starter: 0
-  FlipMaterials: 0
+  FlipMaterials: 1
+  Disabled: 0
