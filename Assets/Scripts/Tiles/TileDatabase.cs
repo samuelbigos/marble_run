@@ -32,6 +32,7 @@ namespace Tiles
             public bool Starter;
             public bool Ender;
             public Composite Composite;
+            public int IndexInComposite;
             public int TileIndex;
         }
 
@@ -113,6 +114,7 @@ namespace Tiles
 
                         Tile tile = CreateTileVariant(this, baseTile, rot);
                         tile.Composite = composite;
+                        tile.IndexInComposite = i;
                         Tiles.Add(tile);
                         tile.TileIndex = Tiles.Count - 1;
                         composite.Tiles[i] = tile;
@@ -164,7 +166,7 @@ namespace Tiles
                             Vector3 pos = debugSpawnPos + (composite.TileOffsets[i]) * TileSize;;
                             pos -= centre - composite.TileOffsets[0];
                             TileInstance tileInstance = Instantiate(TilePrefab, transform);
-                            tileInstance.Init(composite.Tiles[i], -1, null, pos, rotationObj.transform);
+                            tileInstance.Init(composite.Tiles[i], Tiles.IndexOf(composite.Tiles[i]), null, pos, rotationObj.transform);
                         }
                         
                         debugSpawnPos.x += TileSize * 4.0f;
@@ -201,7 +203,7 @@ namespace Tiles
                     if (spawnDebugTiles)
                     {
                         TileInstance tileInstance = Instantiate(TilePrefab, transform);
-                        tileInstance.Init(tile, -1, null, debugSpawnPos, rotationObj.transform);
+                        tileInstance.Init(tile, Tiles.IndexOf(tile), null, debugSpawnPos, rotationObj.transform);
                     }
                     
                     debugSpawnPos.x += TileSize * 2.0f;

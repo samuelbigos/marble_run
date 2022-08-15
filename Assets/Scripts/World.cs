@@ -98,8 +98,8 @@ public class World : MonoBehaviour
         
         _errorCubeA = transform.Find("ErrorCubeA").GetComponent<MeshFilter>();
         _errorCubeB = transform.Find("ErrorCubeB").GetComponent<MeshFilter>();
-        _errorCubeA.gameObject.SetActive(false);
-        _errorCubeB.gameObject.SetActive(false);
+        // _errorCubeA.gameObject.SetActive(false);
+        // _errorCubeB.gameObject.SetActive(false);
         
         Vector3 camPos = _mainCamera.transform.position;
         camPos.y = _gridSize.y * _grid.CellSize + 10.0f;

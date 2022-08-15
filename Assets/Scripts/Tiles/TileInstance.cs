@@ -9,7 +9,8 @@ public class TileInstance : MonoBehaviour
     [SerializeField] private MeshCollider Collider;
     [SerializeField] private TileDatabase.Tile _tile;
     [SerializeField] private int _cellIdx;
-
+    [SerializeField] private int _tileIdx;
+    
     private int _tileSize = 1;
 
     public Mesh GetMesh()
@@ -56,6 +57,7 @@ public class TileInstance : MonoBehaviour
         cachedTransform.rotation = Quaternion.Euler(0.0f, 90.0f * tile.Rot, 0.0f);
 
         _cellIdx = cellIdx;
+        _tileIdx = tile.TileIndex;
     }
 
 #if UNITY_EDITOR

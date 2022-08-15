@@ -83,7 +83,7 @@ public class WFC : MonoBehaviour
     private readonly ProfilerMarker _profileRunStep = new("WFC.RunStep");
 
     private static readonly int MAX_COLLAPSES = 20;
-    private static readonly ushort NO_NEIGHBOUR = 6;
+    private static readonly ushort NO_NEIGHBOUR = ushort.MaxValue;
     
     private System.Random _rng;
     private bool _initialised;
@@ -169,7 +169,7 @@ public class WFC : MonoBehaviour
         }
 
         // create cell arrays
-        for (int c = 0; c < C; c++)
+        for (ushort c = 0; c < C; c++)
         {
             bool didBanTile = false;
             
@@ -192,34 +192,39 @@ public class WFC : MonoBehaviour
             }
 
             Vector3Int xyz = Grid.XYZFromIndex(c, _gridSize);
-            for (int t = 0; t < tiles.Count; t++)
+            for (ushort t = 0; t < tiles.Count; t++)
             {
                 _wave[c, t] = 1;
+                
+                // ban tiles that are part of a composite that would go off the grid
+                if (tiles[t].Composite != null)
+                {
+                    for (int i = 0; i < tiles[t].Composite.TileOffsets.Length; i++)
+                    {
+                        Vector3Int xyzAtOffset = Grid.XYZFromIndex(c, _gridSize) 
+                            + tiles[t].Composite.TileOffsets[i] - tiles[t].Composite.TileOffsets[tiles[i].IndexInComposite];
+                        Grid.IndexFromXYZ(xyzAtOffset, _gridSize, out bool outOfBounds);
+                        
+                        if (outOfBounds)
+                        {
+                            _wave[c, t] = 0;
+                            break;
+                        }
+                    }
+                }
 
                 // ban tiles that would go off the edge of the grid
                 if (xyz.x == 0 && _tiles[t, (int) TILE.SIDE_3] != 0)
-                {
-                    //didBanTile = true;
-                    _wave[c, t] = 0;
-                }
+                    BanTileAndComposite(c, t, tiles[t]);
 
                 if (xyz.x == grid.GridSize.x - 1 && _tiles[t, (int) TILE.SIDE_1] != 0)
-                {
-                    //didBanTile = true;
-                    _wave[c, t] = 0;
-                }
+                    BanTileAndComposite(c, t, tiles[t]);
 
                 if (xyz.z == 0 && _tiles[t, (int) TILE.SIDE_2] != 0)
-                {
-                    //didBanTile = true;
-                    _wave[c, t] = 0;
-                }
+                    BanTileAndComposite(c, t, tiles[t]);
 
                 if (xyz.z == grid.GridSize.z - 1 && _tiles[t, (int) TILE.SIDE_0] != 0)
-                {
-                    //didBanTile = true;
-                    _wave[c, t] = 0;
-                }
+                    BanTileAndComposite(c, t, tiles[t]);
 
                 // place the starting tile
                 if (c == _startCell)
@@ -243,8 +248,7 @@ public class WFC : MonoBehaviour
                 // prevent any path going off the top of the grid
                 if (xyz.y == _gridSize.y - 1 && _tiles[t, (int) TILE.TOP] != 0)
                 {
-                    //didBanTile = true;
-                    _wave[c, t] = 0;
+                    BanTileAndComposite(c, t, tiles[t]);
                 }
 
                 // prevent any path going off the bottom of the grid
@@ -284,9 +288,8 @@ public class WFC : MonoBehaviour
         }
 
         _seed = System.DateTime.Now.Millisecond;
+        _seed = 581;
         _rng = new System.Random(_seed);
-        
-        //_seed = 8;
 
         _stopwatch.Stop();
         Debug.Log($"# WFC Setup Completed in {_stopwatch.ElapsedMilliseconds / 1000.0f} seconds.\n" +
@@ -297,6 +300,25 @@ public class WFC : MonoBehaviour
         _initialised = true;
         
         _profileSetup.End();
+    }
+
+    private void BanTileAndComposite(ushort c, ushort t, TileDatabase.Tile tile)
+    {
+        _wave[c, t] = 0;
+        
+        if (tile.Composite != null)
+        {
+            for (int i = 0; i < tile.Composite.TileOffsets.Length; i++)
+            {
+                Vector3Int xyzAtOffset = Grid.XYZFromIndex(c, _gridSize) 
+                                         + tile.Composite.TileOffsets[i] - tile.Composite.TileOffsets[tile.IndexInComposite];
+                ushort cell = (ushort) Grid.IndexFromXYZ(xyzAtOffset, _gridSize, out bool outOfBounds);
+                if (!outOfBounds)
+                {
+                    _wave[cell, tile.Composite.Tiles[i].TileIndex] = 0;
+                }
+            }
+        }
     }
 
     public void Reset()
@@ -361,7 +383,8 @@ public class WFC : MonoBehaviour
         
         _stopwatch.Stop();
         Debug.Log($"# WFC Step completed in {_stopwatch.ElapsedMilliseconds / 1000.0f} seconds.\n" +
-                  $"# Max stack size: {_return[(int) StepReturnParams.MaxStackSize]}");
+                  $"# Max stack size: {_return[(int) StepReturnParams.MaxStackSize]}\n" +
+                  $"# Collapsed tile {_collapsedTiles[0]} in cell {_collapsedCells[0]}\n");
 
         return (StepResult)_return[(int) StepReturnParams.Result];
     }
@@ -510,6 +533,7 @@ public class WFC : MonoBehaviour
                 return StepResult.WFCCollapseError;
             }
 
+            Debug.Log($"Collapsing cell: {current} with tile {randTile}");
             CollapseCellToTile((ushort) current, (ushort) randTile);
 
             return StepResult.WFCInProgress;
@@ -572,6 +596,9 @@ public class WFC : MonoBehaviour
             {
                 ushort nCell = _neighbors[sCell, n];
                 if (nCell == NO_NEIGHBOUR)
+                    continue;
+                
+                if (_collapsed[nCell])
                     continue;
 
                 ushort incompatibleCount = 0;
@@ -653,9 +680,9 @@ public class WFC : MonoBehaviour
             return compatible;
         }
 
-        private void Ban(int cell, int tile, bool addToStack = false)
+        private void Ban(int c, int t, bool addToStack = false)
         {
-            _wave[cell, tile] = 0;
+            _wave[c, t] = 0;
         }
     }
     
