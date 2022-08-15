@@ -30,6 +30,7 @@ public class World : MonoBehaviour
     [SerializeField] private float VisualTiltSpeed = 3.0f;
     [SerializeField] private float VisualTiltAmount = 15.0f;
     [SerializeField] private float WinTime = 3.0f;
+    [SerializeField] private int Seed = -1;
 
     [SerializeField] private Slider _sizeXSlider;
     [SerializeField] private Slider _sizeYSlider;
@@ -90,7 +91,7 @@ public class World : MonoBehaviour
         Vector3Int start = new Vector3Int((int)(_grid.GridSize.x * 0.5f), _grid.GridSize.y - 1, (int)(_grid.GridSize.z * 0.5f));
         Vector3Int end = new Vector3Int((int)(_grid.GridSize.x * 0.5f), 0, (int)(_grid.GridSize.z * 0.5f));
         
-        _wfc.Setup(_grid, _tileDatabase.Tiles, start, end);
+        _wfc.Setup(_grid, _tileDatabase.Tiles, start, end, Seed);
         
         _marbleSpawnPos = start * (int) _grid.CellSize + Vector3.up * 2.0f;
         

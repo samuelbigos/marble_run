@@ -10,6 +10,7 @@ using Unity.Burst;
 using Unity.Profiling;
 using Utils;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 public class WFC : MonoBehaviour
 {
@@ -113,7 +114,7 @@ public class WFC : MonoBehaviour
         _initialised = false;
     }
 
-    public void Setup(Grid grid, List<TileDatabase.Tile> tiles, Vector3Int startCell, Vector3Int endTile)
+    public void Setup(Grid grid, List<TileDatabase.Tile> tiles, Vector3Int startCell, Vector3Int endTile, int seed)
     {
         _profileSetup.Begin();
 
@@ -139,7 +140,7 @@ public class WFC : MonoBehaviour
         _wave = new NativeArrayXD<ushort>(C, T);
         _waveCache = new NativeArrayXD<ushort>(C, T);
 
-        _stack = new NativeArray<ushort>(C * 10, Allocator.Persistent);
+        _stack = new NativeArray<ushort>(C + 1, Allocator.Persistent);
 
         _entropy = new NativeArray<float>(C, Allocator.Persistent);
         _entropyCache = new NativeArray<float>(C, Allocator.Persistent);
@@ -207,7 +208,7 @@ public class WFC : MonoBehaviour
                         
                         if (outOfBounds)
                         {
-                            _wave[c, t] = 0;
+                            BanTileAndComposite(c, t, tiles[t]);
                             break;
                         }
                     }
@@ -231,8 +232,7 @@ public class WFC : MonoBehaviour
                 {
                     if (!tiles[t].Starter)
                     {
-                        didBanTile = true;
-                        _wave[c, t] = 0;
+                        BanTileAndComposite(c, t, tiles[t]);
                     }
                 }
                 // place the ending tile
@@ -259,21 +259,12 @@ public class WFC : MonoBehaviour
                 // }
             }
 
-            if (didBanTile)
-            {
-                //_stack[_stackSize++] = c;
-            }
-
             _entropy[c] = CalcEntropy(c, _wave, _tiles, T, _tileWeights);
             
             if (c == _startCell)
             {
                 _entropy[c] = 0.0f;
             }
-            // if (c == _endCell)
-            // {
-            //     _entropy[c] = 0.0f;
-            // }
         }
 
         unsafe
@@ -287,8 +278,8 @@ public class WFC : MonoBehaviour
             UnsafeUtility.MemCpy(dst, src, sizeof(float) * C);
         }
 
-        _seed = System.DateTime.Now.Millisecond;
-        _seed = 581;
+        System.Random rng = new System.Random();
+        _seed = seed == -1 ? Mathf.Abs(rng.Next()) : seed;
         _rng = new System.Random(_seed);
 
         _stopwatch.Stop();
@@ -305,6 +296,8 @@ public class WFC : MonoBehaviour
     private void BanTileAndComposite(ushort c, ushort t, TileDatabase.Tile tile)
     {
         _wave[c, t] = 0;
+        if (!StackContainsCell(_stack, _stackSize, c))
+            _stack[_stackSize++] = c;
         
         if (tile.Composite != null)
         {
@@ -316,6 +309,8 @@ public class WFC : MonoBehaviour
                 if (!outOfBounds)
                 {
                     _wave[cell, tile.Composite.Tiles[i].TileIndex] = 0;
+                    if (!StackContainsCell(_stack, _stackSize, cell))
+                        _stack[_stackSize++] = cell;
                 }
             }
         }
@@ -371,6 +366,7 @@ public class WFC : MonoBehaviour
         _profileRunStep.End();
 
         _stepCount++;
+        _stackSize = 0;
         
         incompatibleStack = _return[(int) StepReturnParams.IncompatibleStack];
         incompatibleNeighbor = _return[(int) StepReturnParams.IncompatibleNeighbor];
@@ -555,7 +551,9 @@ public class WFC : MonoBehaviour
                 Ban(cell, (ushort)i, true);
             }
             _collapsed[cell] = true;
-            _stack[_stackSize++] = cell;
+            
+            if (!StackContainsCell(_stack, _stackSize, cell))
+                _stack[_stackSize++] = cell;
             
             //Debug.Log($"Collapsing cell [{cell}] with tile [{tile}]");
 
@@ -641,8 +639,7 @@ public class WFC : MonoBehaviour
 
                 if (!StackContainsCell(_stack, _stackSize, nCell))
                 {
-                    _stack[_stackSize] = nCell;
-                    _stackSize++;
+                    _stack[_stackSize++] = nCell;
                 }
             }
             incompatibleStack = 0;
