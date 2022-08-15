@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da04651455cee7e42aa4930ae56207bf, type: 3}
+  m_Name: _SplitDouble
+  m_EditorClassIdentifier: 
+  BaseTiles:
+  - {fileID: 11400000, guid: 0c31857737fffd64884546874b307f6a, type: 2}
+  - {fileID: 11400000, guid: ad14fa6c51eaa084fbc22523840dc46a, type: 2}
+  - {fileID: 11400000, guid: 94ae0178ee6532c41934c2fda77877d2, type: 2}
+  - {fileID: 11400000, guid: 2ff9aeb023063b34183b96964e3613f0, type: 2}
+  - {fileID: 11400000, guid: 2972d428093c24f409e9463f56e56824, type: 2}
+  - {fileID: 11400000, guid: 4d69d5641c88d4941bb34c4a6ddeafb5, type: 2}
+  BaseTileOffsets:
+  - {x: 0, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  - {x: 2, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
+  - {x: 1, y: 0, z: 1}
+  - {x: 2, y: 0, z: 1}
+  Disabled: 0

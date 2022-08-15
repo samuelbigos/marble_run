@@ -90,7 +90,7 @@ public class World : MonoBehaviour
         Vector3Int start = new Vector3Int((int)(_grid.GridSize.x * 0.5f), _grid.GridSize.y - 1, (int)(_grid.GridSize.z * 0.5f));
         Vector3Int end = new Vector3Int((int)(_grid.GridSize.x * 0.5f), 0, (int)(_grid.GridSize.z * 0.5f));
         
-        _wfc.Setup(_grid, _tileDatabase.Tiles, _tileDatabase.Composites, start, end);
+        _wfc.Setup(_grid, _tileDatabase.Tiles, start, end);
         
         _marbleSpawnPos = start * (int) _grid.CellSize + Vector3.up * 2.0f;
         
@@ -161,25 +161,6 @@ public class World : MonoBehaviour
         {
             _cameraRig.transform.position = _marble.position;
         }
-    }
-
-    private IEnumerator CameraRigLerp(Vector3 start, Vector3 end)
-    {
-        float t = 0.0f;
-        while (t <= 1.0) 
-        {
-            t += Time.deltaTime * 2.0f;
-            _cameraRig.transform.position = Vector3.Lerp(start, end,Easing.Out(t));
-            yield return null;
-        }
-    }
-
-    private void ResetWFC()
-    {
-        _wfcFinished = false;
-        _wfcStarted = Time.realtimeSinceStartupAsDouble;
-        
-        
     }
 
     private void UpdateWFC()

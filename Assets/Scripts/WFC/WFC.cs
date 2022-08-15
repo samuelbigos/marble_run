@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Tiles;
 using UnityEngine;
 using Unity.Collections.LowLevel.Unsafe;
@@ -8,6 +9,7 @@ using Unity.Jobs;
 using Unity.Burst;
 using Unity.Profiling;
 using Utils;
+using Debug = UnityEngine.Debug;
 
 public class WFC : MonoBehaviour
 {
@@ -25,6 +27,7 @@ public class WFC : MonoBehaviour
         IncompatibleStack,
         IncompatibleNeighbor,
         CollapsedCount,
+        MaxStackSize,
         COUNT
     }
 
@@ -34,8 +37,6 @@ public class WFC : MonoBehaviour
         BOT,
         SIDE_0, SIDE_1, SIDE_2, SIDE_3,
         NOT_SIDE_0, NOT_SIDE_1, NOT_SIDE_2, NOT_SIDE_3,
-        COMPOSITE,
-        INDEX_IN_COMPOSITE,
         COUNT
     }
     
@@ -53,16 +54,14 @@ public class WFC : MonoBehaviour
     private int T;
     private int D;
 
-    private NativeArrayXD<int> _neighbors;
-    private NativeArrayXD<int> _tiles;
+    private NativeArrayXD<ushort> _neighbors;
+    private NativeArrayXD<ushort> _tiles;
     private NativeArray<float> _tileWeights;
-    private NativeArrayXD<int> _compositeTiles;
-    private NativeArrayXD<Vector3Int> _compositeOffsets;
     private NativeArrayXD<ushort> _wave;
     private NativeArrayXD<ushort> _waveCache;
 
-    private int _stackSize;
-    private NativeArray<int> _stack;
+    private ushort _stackSize;
+    private NativeArray<ushort> _stack;
 
     private NativeArray<float> _entropy;
     private NativeArray<float> _entropyCache;
@@ -83,11 +82,12 @@ public class WFC : MonoBehaviour
     private readonly ProfilerMarker _profileReset = new("WFC.Reset");
     private readonly ProfilerMarker _profileRunStep = new("WFC.RunStep");
 
-    private static readonly int COMPOSITE_MAX_TILES = 10;
     private static readonly int MAX_COLLAPSES = 20;
+    private static readonly ushort NO_NEIGHBOUR = 6;
     
     private System.Random _rng;
     private bool _initialised;
+    private Stopwatch _stopwatch;
 
     public void OnDestroy()
     {
@@ -108,16 +108,17 @@ public class WFC : MonoBehaviour
             _collapsed.Dispose();
             _return.Dispose();
             _incompatible.Dispose();
-            _compositeTiles.Dispose();
-            _compositeOffsets.Dispose();
         }
 
         _initialised = false;
     }
 
-    public void Setup(Grid grid, List<TileDatabase.Tile> tiles, List<TileDatabase.Composite> composites, Vector3Int startCell, Vector3Int endTile)
+    public void Setup(Grid grid, List<TileDatabase.Tile> tiles, Vector3Int startCell, Vector3Int endTile)
     {
         _profileSetup.Begin();
+
+        _stopwatch = new();
+        _stopwatch.Start();
         
         Dispose();
 
@@ -129,16 +130,16 @@ public class WFC : MonoBehaviour
         C = grid.GridSize.x * grid.GridSize.y * grid.GridSize.z;
         T = tiles.Count;
         D = 6;
+        
+        Debug.Assert(C < short.MaxValue, "Too many cells for ushort capacity.");
 
-        _neighbors = new NativeArrayXD<int>(C, D);
-        _tiles = new NativeArrayXD<int>(T, (int) TILE.COUNT);
+        _neighbors = new NativeArrayXD<ushort>(C, D);
+        _tiles = new NativeArrayXD<ushort>(T, (int) TILE.COUNT);
         _tileWeights = new NativeArray<float>(T, Allocator.Persistent);
-        _compositeTiles = new NativeArrayXD<int>(composites.Count, COMPOSITE_MAX_TILES);
-        _compositeOffsets = new NativeArrayXD<Vector3Int>(composites.Count, COMPOSITE_MAX_TILES);
         _wave = new NativeArrayXD<ushort>(C, T);
         _waveCache = new NativeArrayXD<ushort>(C, T);
 
-        _stack = new NativeArray<int>(C * 2, Allocator.Persistent);
+        _stack = new NativeArray<ushort>(C * 10, Allocator.Persistent);
 
         _entropy = new NativeArray<float>(C, Allocator.Persistent);
         _entropyCache = new NativeArray<float>(C, Allocator.Persistent);
@@ -147,64 +148,22 @@ public class WFC : MonoBehaviour
         _return = new NativeArray<int>((int) StepReturnParams.COUNT, Allocator.Persistent);
         _collapsedCells = new NativeArray<int>(MAX_COLLAPSES, Allocator.Persistent);
         _collapsedTiles = new NativeArray<int>(MAX_COLLAPSES, Allocator.Persistent);
-        
-        // create composite array
-        Dictionary<string, int> compositeToIndex = new();
-        for (int i = 0; i < composites.Count; i++)
-        {
-            TileDatabase.Composite composite = composites[i];
-            
-            for (int t = 0; t < COMPOSITE_MAX_TILES; t++)
-            {
-                if (t < composite.Tiles.Length)
-                {
-                    _compositeTiles[i, t] = tiles.IndexOf(composite.Tiles[t]);
-                    _compositeOffsets[i,t] = composite.TileOffsets[t];
-                }
-                else
-                {
-                    _compositeTiles[i, t] = -1;
-                }
-            }
-            
-            compositeToIndex.Add(composite.Name, i);
-        }
 
         // create tile array
         for (int i = 0; i < tiles.Count; i++)
         {
             TileDatabase.Tile tile = tiles[i];
 
-            _tiles[i, (int) TILE.BOT] = tile.Match[4];
-            _tiles[i, (int) TILE.TOP] = tile.Match[5];
-            _tiles[i, (int) TILE.SIDE_0] = tile.Match[0];
-            _tiles[i, (int) TILE.SIDE_1] = tile.Match[1];
-            _tiles[i, (int) TILE.SIDE_2] = tile.Match[2];
-            _tiles[i, (int) TILE.SIDE_3] = tile.Match[3];
-            _tiles[i, (int) TILE.NOT_SIDE_0] = tile.NotMatch[0];
-            _tiles[i, (int) TILE.NOT_SIDE_1] = tile.NotMatch[1];
-            _tiles[i, (int) TILE.NOT_SIDE_2] = tile.NotMatch[2];
-            _tiles[i, (int) TILE.NOT_SIDE_3] = tile.NotMatch[3];
-            if (tile.Composite != null && tile.Composite.Name != "")
-            {
-                _tiles[i, (int) TILE.COMPOSITE] = compositeToIndex[tile.Composite.Name];
-                bool found = false;
-                for (int j = 0; j < tile.Composite.Tiles.Length; j++)
-                {
-                    if (tile.Composite.Tiles[j] == tile)
-                    {
-                        _tiles[i, (int) TILE.INDEX_IN_COMPOSITE] = j;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                    Debug.Assert(false, "Is b0rked.");
-            }
-            else
-            {
-                _tiles[i, (int) TILE.COMPOSITE] = -1;
-            }
+            _tiles[i, (int) TILE.BOT] = (ushort) tile.Match[4];
+            _tiles[i, (int) TILE.TOP] = (ushort) tile.Match[5];
+            _tiles[i, (int) TILE.SIDE_0] = (ushort) tile.Match[0];
+            _tiles[i, (int) TILE.SIDE_1] = (ushort) tile.Match[1];
+            _tiles[i, (int) TILE.SIDE_2] = (ushort) tile.Match[2];
+            _tiles[i, (int) TILE.SIDE_3] = (ushort) tile.Match[3];
+            _tiles[i, (int) TILE.NOT_SIDE_0] = (ushort) tile.NotMatch[0];
+            _tiles[i, (int) TILE.NOT_SIDE_1] = (ushort) tile.NotMatch[1];
+            _tiles[i, (int) TILE.NOT_SIDE_2] = (ushort) tile.NotMatch[2];
+            _tiles[i, (int) TILE.NOT_SIDE_3] = (ushort) tile.NotMatch[3];
 
             _tileWeights[i] = tile.Weight;
         }
@@ -224,11 +183,11 @@ public class WFC : MonoBehaviour
                     test.y < 0 || test.y > grid.GridSize.y - 1 ||
                     test.z < 0 || test.z > grid.GridSize.z - 1)
                 {
-                    _neighbors[c, n] = -1;
+                    _neighbors[c, n] = NO_NEIGHBOUR;
                     continue;
                 }
 
-                _neighbors[c, n] = Grid.IndexFromXYZ(test, grid.GridSize, out bool outOfBounds);
+                _neighbors[c, n] = (ushort) Grid.IndexFromXYZ(test, grid.GridSize, out bool outOfBounds);
                 Debug.Assert(outOfBounds == false, "outOfBounds == false");
             }
 
@@ -298,7 +257,7 @@ public class WFC : MonoBehaviour
 
             if (didBanTile)
             {
-                _stack[_stackSize++] = c;
+                //_stack[_stackSize++] = c;
             }
 
             _entropy[c] = CalcEntropy(c, _wave, _tiles, T, _tileWeights);
@@ -325,9 +284,15 @@ public class WFC : MonoBehaviour
         }
 
         _seed = System.DateTime.Now.Millisecond;
-        Debug.Log($"WFC Seed: {_seed}");
-        //_seed = 8;
         _rng = new System.Random(_seed);
+        
+        //_seed = 8;
+
+        _stopwatch.Stop();
+        Debug.Log($"# WFC Setup Completed in {_stopwatch.ElapsedMilliseconds / 1000.0f} seconds.\n" +
+                  $"# Seed: {_seed}\n" +
+                  $"# Tiles: {T}\n" +
+                  $"# Cells: {C}\n");
 
         _initialised = true;
         
@@ -355,6 +320,8 @@ public class WFC : MonoBehaviour
 
     public StepResult Step(out List<(int, int)> collapses, out int incompatibleStack, out int incompatibleNeighbor)
     {
+        _stopwatch.Restart();
+        
         WFCStepJob job = new()
         {
             C = C,
@@ -363,8 +330,6 @@ public class WFC : MonoBehaviour
             _neighbors = _neighbors,
             _tiles = _tiles,
             _tileWeights = _tileWeights,
-            _compositeTiles = _compositeTiles,
-            _compositeOffsets = _compositeOffsets,
             _wave = _wave,
             _entropy = _entropy,
             _stackSize = _stackSize,
@@ -375,7 +340,6 @@ public class WFC : MonoBehaviour
             _collapsedCells = _collapsedCells,
             _collapsedTiles = _collapsedTiles,
             _seed = _rng.Next(),
-            _gridSize = _gridSize,
             _startCell = _startCell,
             _stepCount = _stepCount
         };
@@ -386,16 +350,20 @@ public class WFC : MonoBehaviour
 
         _stepCount++;
         
-        incompatibleStack = _return[(int)StepReturnParams.IncompatibleStack];
-        incompatibleNeighbor = _return[(int)StepReturnParams.IncompatibleNeighbor];
+        incompatibleStack = _return[(int) StepReturnParams.IncompatibleStack];
+        incompatibleNeighbor = _return[(int) StepReturnParams.IncompatibleNeighbor];
 
         collapses = new List<(int, int)>();
-        for (int i = 0; i < _return[(int)StepReturnParams.CollapsedCount]; i++)
+        for (int i = 0; i < _return[(int) StepReturnParams.CollapsedCount]; i++)
         {
             collapses.Add((_collapsedCells[i], _collapsedTiles[i]));
         }
+        
+        _stopwatch.Stop();
+        Debug.Log($"# WFC Step completed in {_stopwatch.ElapsedMilliseconds / 1000.0f} seconds.\n" +
+                  $"# Max stack size: {_return[(int) StepReturnParams.MaxStackSize]}");
 
-        return (StepResult)_return[(int)StepReturnParams.Result];
+        return (StepResult)_return[(int) StepReturnParams.Result];
     }
 
     [BurstCompile(CompileSynchronously = true)]
@@ -404,21 +372,18 @@ public class WFC : MonoBehaviour
         [ReadOnly] public int C;
         [ReadOnly] public int T;
         [ReadOnly] public int D;
-        [ReadOnly] public NativeArrayXD<int> _neighbors;
-        [ReadOnly] public NativeArrayXD<int> _tiles;
+        [ReadOnly] public NativeArrayXD<ushort> _neighbors;
+        [ReadOnly] public NativeArrayXD<ushort> _tiles;
         [ReadOnly] public NativeArray<float> _tileWeights;
-        [ReadOnly] public NativeArrayXD<int> _compositeTiles;
-        [ReadOnly] public NativeArrayXD<Vector3Int> _compositeOffsets;
 
-        [ReadOnly] public Vector3Int _gridSize;
         [ReadOnly] public int _startCell;
         [ReadOnly] public int _seed;
         [ReadOnly] public int _stepCount;
 
         public NativeArrayXD<ushort> _wave;
         public NativeArray<float> _entropy;
-        public int _stackSize;
-        public NativeArray<int> _stack;
+        public ushort _stackSize;
+        public NativeArray<ushort> _stack;
         public NativeArray<bool> _collapsed;
         public NativeArray<int> _incompatible;
         public NativeArray<int> _return;
@@ -433,17 +398,18 @@ public class WFC : MonoBehaviour
             _rng = new Unity.Mathematics.Random((uint) Mathf.Abs(_seed));
             StepResult result = StepResult.WFCInProgress;
             
-            if (_stepCount == 0)
-            {
-                while (_stackSize > 0)
-                {
-                    if (Propagate(out int incompatibleStack, out int incompatibleNeighbor)) continue;
-                    _return[(int)StepReturnParams.IncompatibleStack] = incompatibleStack;
-                    _return[(int)StepReturnParams.IncompatibleNeighbor] = incompatibleNeighbor;
-                    result = StepResult.WFCPropagateError;
-                }
-            }
+            // if (_stepCount == 0)
+            // {
+            //     while (_stackSize > 0)
+            //     {
+            //         if (Propagate(out int incompatibleStack, out int incompatibleNeighbor)) continue;
+            //         _return[(int)StepReturnParams.IncompatibleStack] = incompatibleStack;
+            //         _return[(int)StepReturnParams.IncompatibleNeighbor] = incompatibleNeighbor;
+            //         result = StepResult.WFCPropagateError;
+            //     }
+            // }
 
+            int maxStackSize = 0;
             if (result != StepResult.WFCPropagateError)
             {
                 _collapses = 0;
@@ -452,6 +418,7 @@ public class WFC : MonoBehaviour
                 {
                     while (_stackSize > 0)
                     {
+                        maxStackSize = Mathf.Max(_stackSize, maxStackSize);
                         if (Propagate(out int incompatibleStack, out int incompatibleNeighbor)) continue;
                         _return[(int)StepReturnParams.IncompatibleStack] = incompatibleStack;
                         _return[(int)StepReturnParams.IncompatibleNeighbor] = incompatibleNeighbor;
@@ -461,8 +428,9 @@ public class WFC : MonoBehaviour
                 }
             }
 
-            _return[(int)StepReturnParams.Result] = (int)result;
-            _return[(int)StepReturnParams.CollapsedCount] = _collapses;
+            _return[(int) StepReturnParams.MaxStackSize] = maxStackSize;
+            _return[(int) StepReturnParams.Result] = (int)result;
+            _return[(int) StepReturnParams.CollapsedCount] = _collapses;
         }
 
         private StepResult Collapse()
@@ -542,12 +510,12 @@ public class WFC : MonoBehaviour
                 return StepResult.WFCCollapseError;
             }
 
-            CollapseCellToTile(current, randTile);
+            CollapseCellToTile((ushort) current, (ushort) randTile);
 
             return StepResult.WFCInProgress;
         }
 
-        private void CollapseCellToTile(int cell, int tile)
+        private void CollapseCellToTile(ushort cell, ushort tile)
         {
             if (_collapsed[cell])
             {
@@ -596,19 +564,17 @@ public class WFC : MonoBehaviour
         
         private bool Propagate(out int incompatibleStack, out int incompatibleNeighbor)
         {
-            int sCell = _stack[_stackSize - 1];
+            ushort sCell = _stack[_stackSize - 1];
             _stackSize--;
 
             // For each of the 6 neighboring cells...
-            for (int n = 0; n < D; n++)
+            for (ushort n = 0; n < D; n++)
             {
-                int nCell = _neighbors[sCell, n];
-                if (nCell == -1)
+                ushort nCell = _neighbors[sCell, n];
+                if (nCell == NO_NEIGHBOUR)
                     continue;
 
-                int incompatibleCount = 0;
-
-                bool connects = false;
+                ushort incompatibleCount = 0;
 
                 // for each still possible tile in the neighboring cell...
                 for (ushort nt = 0; nt < T; nt++)
@@ -616,7 +582,7 @@ public class WFC : MonoBehaviour
                     if (_wave[nCell, nt] == 0)
                         continue;
                     
-                    bool compatible = IsAnyTileCompatibleWithCellInDirection(nt, sCell, n, ref connects);
+                    bool compatible = IsAnyTileCompatibleWithCellInDirection(nt, sCell, n);
 
                     if (compatible) continue;
                     _incompatible[incompatibleCount] = nt;
@@ -625,13 +591,13 @@ public class WFC : MonoBehaviour
 
                 if (incompatibleCount <= 0) continue;
                 
-                for (int i = 0; i < incompatibleCount; i++)
+                for (ushort i = 0; i < incompatibleCount; i++)
                 {
                     Ban(nCell, (ushort)_incompatible[i], true);
                 }
 
                 float weight = 0.0f;
-                for (int i = 0; i < T; i++)
+                for (ushort i = 0; i < T; i++)
                 {
                     if (_wave[nCell, i] == 1)
                         weight +=_tileWeights[i];
@@ -645,8 +611,12 @@ public class WFC : MonoBehaviour
 
                 //_entropy[nCell] = Mathf.Min(_entropy[nCell], CalcEntropy(nCell, _wave, _tiles, T, _collapsed[sCell] && connects));
                 _entropy[nCell] = CalcEntropy(nCell, _wave, _tiles, T, _tileWeights);
-                _stack[_stackSize] = nCell;
-                _stackSize++;
+
+                if (!StackContainsCell(_stack, _stackSize, nCell))
+                {
+                    _stack[_stackSize] = nCell;
+                    _stackSize++;
+                }
             }
             incompatibleStack = 0;
             incompatibleNeighbor = 0;
@@ -654,7 +624,7 @@ public class WFC : MonoBehaviour
             return true;
         }
         
-        private bool IsAnyTileCompatibleWithCellInDirection(int tile, int cell, int dir, ref bool connects)
+        private bool IsAnyTileCompatibleWithCellInDirection(ushort tile, ushort cell, ushort dir)
         {
             bool compatible = false;
             
@@ -667,14 +637,12 @@ public class WFC : MonoBehaviour
                 {
                     case 4:
                         compatible = _tiles[st, (int) TILE.TOP] == _tiles[tile, (int) TILE.BOT];
-                        connects = compatible && _tiles[st, (int) TILE.TOP] != 0;
                         break;
                     case 5:
                         compatible = _tiles[st, (int) TILE.BOT] == _tiles[tile, (int) TILE.TOP];
-                        connects = compatible && _tiles[st, (int) TILE.BOT] != 0;
                         break;
                     default:
-                        compatible = Compatible(_tiles, st, tile, dir, ref connects);
+                        compatible = Compatible(_tiles, st, tile, dir);
                         break;
                 }
 
@@ -691,19 +659,16 @@ public class WFC : MonoBehaviour
         }
     }
     
-    private static bool Compatible(NativeArrayXD<int> tiles, int tile1, int tile2, int n, ref bool connects)
+    private static bool Compatible(NativeArrayXD<ushort> tiles, ushort tile1, ushort tile2, ushort n)
     {
         int sSlot = tiles[tile1, (int)TILE.SIDE_0 + n];
         int nSlot = tiles[tile2, (int)TILE.SIDE_0 + (n + 2) % 4];
         int sNotSlot = tiles[tile1, (int)TILE.NOT_SIDE_0 + n];
         int nNotSlot = tiles[tile2, (int)TILE.NOT_SIDE_0 + (n + 2) % 4];
-        
-        bool compatible = sSlot == nSlot && (sNotSlot == 0 || nNotSlot == 0 || sNotSlot != nNotSlot);
-        connects |= compatible && sSlot != 0;
-        return compatible;
+        return sSlot == nSlot && (sNotSlot == 0 || nNotSlot == 0 || sNotSlot != nNotSlot);
     }
 
-    private static float CalcEntropy(int cell, NativeArrayXD<ushort> wave, NativeArrayXD<int> tiles, int tileCount, NativeArray<float> weights)
+    private static float CalcEntropy(int cell, NativeArrayXD<ushort> wave, NativeArrayXD<ushort> tiles, int tileCount, NativeArray<float> weights)
     {
         float sumOfWeights = 0.0f;
         float sumOfWeightsLogWeights = 0.0f;
@@ -730,5 +695,16 @@ public class WFC : MonoBehaviour
                || tiles[tile, (int) TILE.SIDE_2] == 2 
                || tiles[tile, (int) TILE.SIDE_3] == 2 
                || tiles[tile, (int) TILE.BOT] != 0;
+    }
+
+    private static bool StackContainsCell(NativeArray<ushort> stack, ushort stackSize, ushort cell)
+    {
+        for (int i = 0; i < stackSize; i++)
+        {
+            if (stack[i] == cell)
+                return true;
+        }
+
+        return false;
     }
 }

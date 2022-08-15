@@ -22,6 +22,9 @@ public class TileInstance : MonoBehaviour
         transform.parent = parent;
         MeshRenderer.transform.position = tile.MeshOffset;
         MeshRenderer.transform.rotation = Quaternion.Euler(0.0f, 90.0f * tile.MeshRotation, 0.0f);
+        
+        if (tile.Mesh)
+            Debug.Assert(tile.Mesh.isReadable, $"Mesh {tile.Mesh.name} is not marked as readable, can't make collision mesh from it.");
 
         Collider.sharedMesh = tile.Mesh;
             

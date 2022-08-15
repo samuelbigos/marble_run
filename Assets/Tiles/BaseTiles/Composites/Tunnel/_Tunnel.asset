@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da04651455cee7e42aa4930ae56207bf, type: 3}
+  m_Name: _Tunnel
+  m_EditorClassIdentifier: 
+  BaseTiles:
+  - {fileID: 11400000, guid: 592900eca4101a64db96c85e4d75d9ab, type: 2}
+  - {fileID: 11400000, guid: 7e112b5f1776f334e9ee60ea95f226d5, type: 2}
+  - {fileID: 11400000, guid: 3b7b6d3b3c7db0f4a878fe264e2564cd, type: 2}
+  - {fileID: 11400000, guid: 67fc630db03b38f4c87f0e3a4e18244a, type: 2}
+  BaseTileOffsets:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
+  - {x: 0, y: 1, z: 0}
+  - {x: 0, y: 1, z: 1}
+  Disabled: 0

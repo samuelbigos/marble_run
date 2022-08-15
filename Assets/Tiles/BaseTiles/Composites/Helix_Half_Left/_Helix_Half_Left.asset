@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da04651455cee7e42aa4930ae56207bf, type: 3}
+  m_Name: _Helix_Half_Left
+  m_EditorClassIdentifier: 
+  BaseTiles:
+  - {fileID: 11400000, guid: 5128be5460f1cc547a788be44521e561, type: 2}
+  - {fileID: 11400000, guid: 25c33d29343881e4da634e91aed140cf, type: 2}
+  - {fileID: 11400000, guid: 329b0f016b792c54cb7eaa61a801e3f1, type: 2}
+  - {fileID: 11400000, guid: e1092cb4f592fad4f8128902c786e393, type: 2}
+  - {fileID: 11400000, guid: cea1148fbe4e1e64ab244716b1161be6, type: 2}
+  - {fileID: 11400000, guid: b241851835b16ea4e91cd6baf3f0e6f5, type: 2}
+  - {fileID: 11400000, guid: c8f98f34529362842b090ec362776027, type: 2}
+  - {fileID: 11400000, guid: bb6b5aa073e56ce40af3cac90ca164e8, type: 2}
+  BaseTileOffsets:
+  - {x: 0, y: 1, z: 0}
+  - {x: 1, y: 1, z: 0}
+  - {x: 0, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  - {x: 0, y: 0, z: 2}
+  - {x: 1, y: 0, z: 2}
+  - {x: 0, y: 0, z: 3}
+  - {x: 1, y: 0, z: 3}
+  Disabled: 0

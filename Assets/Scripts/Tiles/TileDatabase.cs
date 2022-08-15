@@ -167,13 +167,13 @@ namespace Tiles
                             tileInstance.Init(composite.Tiles[i], -1, null, pos, rotationObj.transform);
                         }
                         
-                        debugSpawnPos.x += TileSize * 3.0f;
+                        debugSpawnPos.x += TileSize * 4.0f;
                     }
 
                     Composites.Add(composite);
                 }
 
-                debugSpawnPos.z += TileSize * 3.0f;
+                debugSpawnPos.z += TileSize * 4.0f;
                 debugSpawnPos.x = 0.0f;
             }
 
