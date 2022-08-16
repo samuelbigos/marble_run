@@ -21,6 +21,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e08ef4b68ac1cff41a12302d32d7e0b8, type: 2}
   - {fileID: 11400000, guid: 709974a9bbfeac84498fa30e75eb3e7b, type: 2}
   - {fileID: 11400000, guid: c393f271d959de04f9c0e3255d203cfd, type: 2}
+  - {fileID: 11400000, guid: 704144b582f08684385a93ea67dd1f8c, type: 2}
+  - {fileID: 11400000, guid: b5c9fdfd1c995fb4dbcb98db8eb4e64d, type: 2}
   BaseTileOffsets:
   - {x: 0, y: 1, z: 0}
   - {x: 1, y: 1, z: 0}
@@ -30,4 +32,6 @@ MonoBehaviour:
   - {x: 1, y: 0, z: 2}
   - {x: 0, y: 0, z: 3}
   - {x: 1, y: 0, z: 3}
+  - {x: 0, y: 1, z: 2}
+  - {x: 1, y: 1, z: 2}
   Disabled: 0

@@ -172,8 +172,6 @@ public class WFC : MonoBehaviour
         // create cell arrays
         for (ushort c = 0; c < C; c++)
         {
-            bool didBanTile = false;
-            
             _collapsed[c] = false;
             
             Vector3Int cPos = Grid.XYZFromIndex(c, grid.GridSize);
@@ -196,14 +194,14 @@ public class WFC : MonoBehaviour
             for (ushort t = 0; t < tiles.Count; t++)
             {
                 _wave[c, t] = 1;
-                
+
                 // ban tiles that are part of a composite that would go off the grid
                 if (tiles[t].Composite != null)
                 {
                     for (int i = 0; i < tiles[t].Composite.TileOffsets.Length; i++)
                     {
                         Vector3Int xyzAtOffset = Grid.XYZFromIndex(c, _gridSize) 
-                            + tiles[t].Composite.TileOffsets[i] - tiles[t].Composite.TileOffsets[tiles[i].IndexInComposite];
+                            + tiles[t].Composite.TileOffsets[i] - tiles[t].Composite.TileOffsets[tiles[t].IndexInComposite];
                         Grid.IndexFromXYZ(xyzAtOffset, _gridSize, out bool outOfBounds);
                         
                         if (outOfBounds)
@@ -250,7 +248,7 @@ public class WFC : MonoBehaviour
                 {
                     BanTileAndComposite(c, t, tiles[t]);
                 }
-
+                
                 // prevent any path going off the bottom of the grid
                 // if (xyz.y == 0 && SlopesDown(_tiles, t))
                 // {
@@ -378,9 +376,9 @@ public class WFC : MonoBehaviour
         }
         
         _stopwatch.Stop();
-        Debug.Log($"# WFC Step completed in {_stopwatch.ElapsedMilliseconds / 1000.0f} seconds.\n" +
-                  $"# Max stack size: {_return[(int) StepReturnParams.MaxStackSize]}\n" +
-                  $"# Collapsed tile {_collapsedTiles[0]} in cell {_collapsedCells[0]}\n");
+        // Debug.Log($"# WFC Step completed in {_stopwatch.ElapsedMilliseconds / 1000.0f} seconds.\n" +
+        //           $"# Max stack size: {_return[(int) StepReturnParams.MaxStackSize]}\n" +
+        //           $"# Collapsed tile {_collapsedTiles[0]} in cell {_collapsedCells[0]}\n");
 
         return (StepResult)_return[(int) StepReturnParams.Result];
     }
@@ -529,7 +527,7 @@ public class WFC : MonoBehaviour
                 return StepResult.WFCCollapseError;
             }
 
-            Debug.Log($"Collapsing cell: {current} with tile {randTile}");
+            //Debug.Log($"Collapsing cell: {current} with tile {randTile}");
             CollapseCellToTile((ushort) current, (ushort) randTile);
 
             return StepResult.WFCInProgress;
@@ -548,7 +546,7 @@ public class WFC : MonoBehaviour
                 if (i == tile)
                     continue;
                 
-                Ban(cell, (ushort)i, true);
+                Ban(cell, (ushort)i);
             }
             _collapsed[cell] = true;
             
@@ -618,7 +616,7 @@ public class WFC : MonoBehaviour
                 
                 for (ushort i = 0; i < incompatibleCount; i++)
                 {
-                    Ban(nCell, (ushort)_incompatible[i], true);
+                    Ban(nCell, (ushort)_incompatible[i]);
                 }
 
                 float weight = 0.0f;
@@ -677,7 +675,7 @@ public class WFC : MonoBehaviour
             return compatible;
         }
 
-        private void Ban(int c, int t, bool addToStack = false)
+        private void Ban(int c, int t)
         {
             _wave[c, t] = 0;
         }

@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9823a12e8595a5d46a82b7cbdda27c64, type: 3}
-  m_Name: empty_0000
+  m_Name: 9
   m_EditorClassIdentifier: 
   Mesh: {fileID: 0}
   MeshOffset: {x: 0, y: 0, z: 0}
   MeshRotation: 0
-  Composite: {fileID: 0}
-  Weight: 1000
+  Composite: {fileID: 11400000, guid: 5d013ff853c4dcb499995fa3f84ded98, type: 2}
+  Weight: 1
   Match: 000000000000000000000000000000000000000000000000
   NotMatch: 00000000000000000000000000000000
   Starter: 0

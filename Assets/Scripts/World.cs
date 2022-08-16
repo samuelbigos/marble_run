@@ -1,15 +1,12 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Tiles;
 using TMPro;
 using Unity.Mathematics;
-using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
-using Utils;
+using Debug = UnityEngine.Debug;
 
 public class World : MonoBehaviour
 {
@@ -47,11 +44,10 @@ public class World : MonoBehaviour
     public float WFCStepDelay = 0.0f;
 
    
-    private bool _wfcFinished = false;
+    private bool _wfcFinished;
     private float _wfcDelayTimer;
-    private double _wfcStarted = 0.0f;
-    private double _wfcTimer = 0.0f;
-    private bool _spawnedMarble = false;
+    private double _wfcTimer;
+    private bool _spawnedMarble;
     private Vector3 _marbleSpawnPos;
     private Rigidbody _marble;
     private bool _win;
@@ -59,6 +55,10 @@ public class World : MonoBehaviour
     
     private Vector3 _camOriginalPos;
     private Quaternion _camOriginalRot;
+
+    private Stopwatch _wfcStopwatch;
+    private Stopwatch _generationStopwatch;
+    private Stopwatch _meshCreationStopwatch;
 
     private void Awake()
     {
@@ -90,8 +90,17 @@ public class World : MonoBehaviour
         
         Vector3Int start = new Vector3Int((int)(_grid.GridSize.x * 0.5f), _grid.GridSize.y - 1, (int)(_grid.GridSize.z * 0.5f));
         Vector3Int end = new Vector3Int((int)(_grid.GridSize.x * 0.5f), 0, (int)(_grid.GridSize.z * 0.5f));
+
+        _wfcStopwatch = new Stopwatch();
+        _generationStopwatch = new Stopwatch();
+        _meshCreationStopwatch = new Stopwatch();
+
+        _generationStopwatch.Start();
+        _wfcStopwatch.Start();
         
         _wfc.Setup(_grid, _tileDatabase.Tiles, start, end, Seed);
+        
+        _wfcStopwatch.Stop();
         
         _marbleSpawnPos = start * (int) _grid.CellSize + Vector3.up * 2.0f;
         
@@ -175,14 +184,13 @@ public class World : MonoBehaviour
         List<int> collapsedTileQueue = new List<int>();
 
         double wfcStartTime = Time.realtimeSinceStartupAsDouble;
-        if (_wfcStarted == 0.0f)
-            _wfcStarted = wfcStartTime;
-
         while ((wfcSteps < WFCStepsPerFrame && _wfcDelayTimer <= 0.0f)
                || ((WFCStepsPerFrame == -1) && Time.realtimeSinceStartupAsDouble < wfcStartTime + WFCTimeslice))
         {
+            _wfcStopwatch.Start();
             WFC.StepResult result = _wfc.Step(out List<(int, int)> collapses, out int incompatibleStack, out int incompatibleNeighbor);
-
+            _wfcStopwatch.Stop();
+            
             switch (result)
             {
                 case WFC.StepResult.WFCInProgress:
@@ -241,11 +249,13 @@ public class World : MonoBehaviour
             _wfcTimer += Time.realtimeSinceStartupAsDouble - wfcStartTime;
             if (_wfcFinished)
             {
-                Debug.Log($"WFC completed in: {Time.realtimeSinceStartupAsDouble - _wfcStarted}.");
-                Debug.Log($"WFC only: {_wfcTimer}.");
+                Debug.Log($"# Generation completed in: {_generationStopwatch.ElapsedMilliseconds / 1000.0f}.\n" +
+                          $"# WFC time: {_wfcStopwatch.ElapsedMilliseconds / 1000.0f}\n" +
+                          $"# Mesh creation time: {_meshCreationStopwatch.ElapsedMilliseconds / 1000.0f}");
             }
         }
 
+        _meshCreationStopwatch.Start();
         while (collapsedCellQueue.Count > 0 && collapsedTileQueue.Count > 0)
         {
             int cell = collapsedCellQueue[0];
@@ -254,6 +264,7 @@ public class World : MonoBehaviour
             collapsedTileQueue.RemoveAt(0);
             OnCellCollapsed(cell, prot);
         }
+        _meshCreationStopwatch.Stop();
     }
     
     void DrawErrorCube(MeshFilter renderer, List<int> cells)
@@ -317,11 +328,14 @@ public class World : MonoBehaviour
         _cameraRig.SetActive(false);
         _mainCamera.transform.SetPositionAndRotation(_camOriginalPos, _camOriginalRot);
         _spawnedMarble = false;
-        Destroy(_marble.gameObject);
+        if (_marble)
+        {
+            Destroy(_marble.gameObject);
+        }
         _marble = null;
         
         _wfc.Reset();
-        Init();
+        Init(); 
     }
 
     public void OnSizeXChanged()
