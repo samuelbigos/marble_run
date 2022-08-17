@@ -13,12 +13,13 @@ namespace Utils
         int _x, _y, _z, _w;
         int _sY, _sZ, _sW;
 
-        NativeArray<T> _internal;
+        private NativeArray<T> _internal;
 
-        public int InternalSize { get { return _internal.Length; } }
-        unsafe public void* GetUnsafePtr()
+        public int InternalSize => _internal.Length;
+
+        public unsafe void* GetUnsafePtr()
         {
-            return NativeArrayUnsafeUtility.GetUnsafePtr(_internal);
+            return _internal.GetUnsafePtr();
         }
         public int X => _x;
         public int Y => _y;
@@ -73,26 +74,26 @@ namespace Utils
         // Accessing with a single value returns the actual value from the non-directional array.
         public T this[int x]
         {
-            get { return _internal[x]; }
-            set { _internal[x] = value; }
+            get => _internal[x];
+            set => _internal[x] = value;
         }
 
         public T this[int x, int y]
         {
-            get { return _internal[ToNonDimensional(x, y)]; }
-            set { _internal[ToNonDimensional(x, y)] = value; }
+            get => _internal[ToNonDimensional(x, y)];
+            set => _internal[ToNonDimensional(x, y)] = value;
         }
 
         public T this[int x, int y, int z]
         {
-            get { return _internal[ToNonDimensional(x, y, z)]; }
-            set { _internal[ToNonDimensional(x, y, z)] = value; }
+            get => _internal[ToNonDimensional(x, y, z)];
+            set => _internal[ToNonDimensional(x, y, z)] = value;
         }
 
         public T this[int x, int y, int z, int w]
         {
-            get { return _internal[ToNonDimensional(x, y, z, w)]; }
-            set { _internal[ToNonDimensional(x, y, z, w)] = value; }
+            get => _internal[ToNonDimensional(x, y, z, w)];
+            set => _internal[ToNonDimensional(x, y, z, w)] = value;
         }
 
         [Conditional("UNITY_EDITOR")]
@@ -132,22 +133,22 @@ namespace Utils
                 _internal.Dispose();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] 
-        public int ToNonDimensional(int x, int y) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ToNonDimensional(int x, int y) 
         { 
-            Check(2, x, y); 
+            //Check(2, x, y); 
             return x * _sY + y; 
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] 
-        public int ToNonDimensional(int x, int y, int z) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ToNonDimensional(int x, int y, int z) 
         { 
-            Check(3, x, y, z);  
+            //Check(3, x, y, z);  
             return x * _sY + y * _sZ + z; 
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] 
-        public int ToNonDimensional(int x, int y, int z, int w) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ToNonDimensional(int x, int y, int z, int w) 
         { 
-            Check(4, x, y, z, w); 
+            //Check(4, x, y, z, w); 
             return x * _sY + y * _sZ + z * _sW + w; 
         }
     }

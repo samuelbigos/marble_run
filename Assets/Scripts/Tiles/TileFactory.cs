@@ -1,12 +1,8 @@
 using System.Collections.Generic;
 using Tiles;
-using Unity.Collections;
 using UnityEngine;
-using Unity.Jobs;
-using Unity.Burst;
 using UnityEngine.Rendering;
 using Unity.Profiling;
-using UnityEngine.Tilemaps;
 
 public class TileFactory : MonoBehaviour
 {
@@ -58,11 +54,16 @@ public class TileFactory : MonoBehaviour
 
     public void Init(Grid grid)
     {
+        ResetTiles();
         Dispose();
         
         for (int c = transform.childCount - 1; c >= 0; c--)
         {
-            Destroy(transform.GetChild(c).gameObject);
+            Transform child = transform.GetChild(c);
+            if (child && child.gameObject) 
+            {
+                Destroy(child.gameObject);
+            }
         }
 
         _grid = grid;
@@ -78,7 +79,7 @@ public class TileFactory : MonoBehaviour
         _initialized = true;
     }
 
-    public void ResetTiles()
+    private void ResetTiles()
     {
         List<int> tiles = new List<int>();
         foreach (int idx in _cellToTile.Keys)

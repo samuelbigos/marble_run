@@ -23758,7 +23758,7 @@ MonoBehaviour:
   m_FillRect: {fileID: 1728735834}
   m_HandleRect: {fileID: 416329430}
   m_Direction: 0
-  m_MinValue: 5
+  m_MinValue: 1
   m_MaxValue: 20
   m_WholeNumbers: 1
   m_Value: 5
@@ -43908,7 +43908,7 @@ GameObject:
   - component: {fileID: 1653999489}
   - component: {fileID: 1653999490}
   m_Layer: 0
-  m_Name: WFC
+  m_Name: Wfc
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -50772,7 +50772,7 @@ MonoBehaviour:
   m_FillRect: {fileID: 806356363}
   m_HandleRect: {fileID: 294197562}
   m_Direction: 0
-  m_MinValue: 5
+  m_MinValue: 1
   m_MaxValue: 20
   m_WholeNumbers: 1
   m_Value: 5

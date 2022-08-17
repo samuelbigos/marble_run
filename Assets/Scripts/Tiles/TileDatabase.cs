@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
-using Utils;
-using Color = UnityEngine.Color;
 
 namespace Tiles
 {

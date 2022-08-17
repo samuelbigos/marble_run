@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
+using WFC;
 
 public class World : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class World : MonoBehaviour
     [SerializeField] private TileDatabase _tileDatabase;
     [SerializeField] private Grid _grid;
     [SerializeField] private Vector3Int _gridSize;
-    [SerializeField] private WFC _wfc;
+    [SerializeField] private WfcBase _wfc;
     [SerializeField] private TileFactory _tileFactory;
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private GameObject _cameraRig;
@@ -193,18 +194,18 @@ public class World : MonoBehaviour
             
             switch (result)
             {
-                case WFC.StepResult.WFCInProgress:
+                case WFC.StepResult.InProgress:
                     break;
-                case WFC.StepResult.WFCFinished:
+                case WFC.StepResult.Finished:
                     _wfcFinished = true;
                     break;
-                case WFC.StepResult.WFCPropagateError:
+                case WFC.StepResult.PropagateError:
                     DrawErrorCube(_errorCubeA, new List<int> { incompatibleNeighbor });
                     DrawErrorCube(_errorCubeB, new List<int> { incompatibleStack });
                     _wfcFinished = true;
                     Debug.LogError($"Could not find compatible tile for cell {incompatibleNeighbor} to {incompatibleStack}.");
                     break;
-                case WFC.StepResult.WFCCollapseError:
+                case WFC.StepResult.CollapseError:
                     _wfcFinished = true;
                     Debug.LogError("Error in WFC.");
                     break;
@@ -215,7 +216,7 @@ public class World : MonoBehaviour
             }
 
             bool addedMesh = false;
-            if (result != WFC.StepResult.WFCFinished && result != WFC.StepResult.WFCCollapseError)
+            if (result != WFC.StepResult.Finished && result != WFC.StepResult.CollapseError)
             {
                 List<int> cubes = new();
                 foreach ((int, int) collapse in collapses)

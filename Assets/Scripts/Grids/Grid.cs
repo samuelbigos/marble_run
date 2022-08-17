@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
-using Unity.Mathematics;
 using UnityEngine;
 using Unity.Profiling;
 using UnityEditor;
-using Utils;
 
 public class Grid : MonoBehaviour
 {
