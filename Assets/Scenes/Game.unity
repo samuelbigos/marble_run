@@ -17686,6 +17686,7 @@ MonoBehaviour:
   _orbitCameraController: {fileID: 11825171}
   _cameraTilter: {fileID: 1016273267}
   _marblePrefab: {fileID: 8808357451525037175, guid: efd007398f8591f4d84fe028968942c6, type: 3}
+  _liftPrefab: {fileID: 1023115747, guid: a9ec7654a4d8a9a4d8448ba28b036835, type: 3}
   TiltForce: 2.5
   VisualTiltSpeed: 2
   VisualTiltAmount: 8
@@ -17698,8 +17699,8 @@ MonoBehaviour:
   _sizeYValue: {fileID: 138521147}
   _sizeZValue: {fileID: 300505668}
   WFCTimeslice: 0.1
-  WFCStepsPerFrame: -1
-  WFCStepDelay: 0.01
+  WFCStepsPerFrame: 1
+  WFCStepDelay: 0.025
 --- !u!4 &719566574
 Transform:
   m_ObjectHideFlags: 0

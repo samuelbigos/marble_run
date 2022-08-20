@@ -24,6 +24,7 @@ public class World : MonoBehaviour
     [SerializeField] private OrbitCameraController _orbitCameraController;
     [SerializeField] private GameObject _cameraTilter;
     [SerializeField] private GameObject _marblePrefab;
+    [SerializeField] private Lift _liftPrefab;
     [SerializeField] private float TiltForce = 1.0f;
     [SerializeField] private float VisualTiltSpeed = 3.0f;
     [SerializeField] private float VisualTiltAmount = 15.0f;
@@ -51,6 +52,7 @@ public class World : MonoBehaviour
     private bool _spawnedMarble;
     private Vector3 _marbleSpawnPos;
     private Rigidbody _marble;
+    private Lift _lift;
     private bool _win;
     private float _winTimer;
     
@@ -89,8 +91,8 @@ public class World : MonoBehaviour
         
         transform.rotation = Quaternion.identity;
         
-        Vector3Int start = new Vector3Int((int)(_grid.GridSize.x * 0.5f), _grid.GridSize.y - 1, (int)(_grid.GridSize.z * 0.5f));
-        Vector3Int end = new Vector3Int((int)(_grid.GridSize.x * 0.5f), 0, (int)(_grid.GridSize.z * 0.5f));
+        Vector3Int start = new Vector3Int(0, _grid.GridSize.y - 1, 0);
+        Vector3Int end = new Vector3Int(0, 0, 0);
 
         _wfcStopwatch = new Stopwatch();
         _generationStopwatch = new Stopwatch();
@@ -102,8 +104,6 @@ public class World : MonoBehaviour
         _wfc.Setup(_grid, _tileDatabase.Tiles, start, end, Seed);
         
         _wfcStopwatch.Stop();
-        
-        _marbleSpawnPos = start * (int) _grid.CellSize + Vector3.up * 2.0f;
         
         _tileFactory.Init(_grid);
         
@@ -117,6 +117,17 @@ public class World : MonoBehaviour
         _mainCamera.transform.position = camPos;
         _camOriginalPos = _mainCamera.transform.position;
         _camOriginalRot = _mainCamera.transform.rotation;
+
+        if (_lift)
+        {
+            Destroy(_lift.gameObject);
+        }
+
+        _lift = Instantiate(_liftPrefab, transform);
+        Vector3 facing = new Vector3(2.0f, 0.0f, 0.0f);
+        _lift.Setup( start - facing, end - facing, -facing.normalized);
+        
+        _marbleSpawnPos = start * (int) _grid.CellSize + Vector3.up * 2.0f - facing;
     }
 
     private void Update()

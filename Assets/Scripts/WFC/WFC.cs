@@ -218,14 +218,13 @@ namespace WFC
                         }
                     }
                     // place the ending tile
-                    // if (c == _endCell)
-                    // {
-                    //     if (!tiles[t].Ender)
-                    //     {
-                    //         didBanTile = true;
-                    //         _wave[c, t] = 0;
-                    //     }
-                    // }
+                    if (c == _endCell)
+                    {
+                        if (!tiles[t].Ender)
+                        {
+                            BanTileAndComposite(c, t, tiles[t]);
+                        }
+                    }
 
                     // prevent any path going off the top of the grid
                     if (xyz.y == _gridSize.y - 1 && _tiles[t, (int) TILE.TOP] != 0)
@@ -375,11 +374,11 @@ namespace WFC
             return sSlot == nSlot && (sNotSlot == 0 || nNotSlot == 0 || sNotSlot != nNotSlot);
         }
 
-        public static float CalcEntropy(int cell, NativeArrayXD<bool> wave, NativeArrayXD<ushort> tiles,
-            int tileCount, NativeArray<float> weights)
+        public static float CalcEntropy(int cell, NativeArrayXD<bool> wave, NativeArrayXD<ushort> tiles, int tileCount, NativeArray<float> weights)
         {
             float sumOfWeights = 0.0f;
             float sumOfWeightsLogWeights = 0.0f;
+            int valid = 0;
             for (int i = 0; i < tileCount; i++)
             {
                 if (wave[cell, i] == false)
@@ -387,6 +386,8 @@ namespace WFC
 
                 if (weights[i] == 0.0f)
                     continue;
+                
+                valid++;
 
                 float p = weights[i];
                 sumOfWeights += p;
@@ -394,6 +395,8 @@ namespace WFC
             }
 
             float entropy = Mathf.Log(sumOfWeights) - sumOfWeightsLogWeights / sumOfWeights;
+            //return valid;
+            //return sumOfWeights;
             return entropy;
         }
 
