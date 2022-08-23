@@ -1,5 +1,5 @@
 {
-    "name": "spacebase_sim",
+    "name": "marble_run",
     "maps": [
         {
             "name": "Player",
@@ -31,6 +31,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "MarbleSpawn",
+                    "type": "Button",
+                    "id": "9fdbd10b-85c9-41ff-9b6e-5675aff81675",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -64,6 +73,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "MouseWheel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f5aaac03-ffd6-4769-8f50-9b56097be0b7",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "MarbleSpawn",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

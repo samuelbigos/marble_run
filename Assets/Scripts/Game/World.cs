@@ -25,11 +25,11 @@ public class World : MonoBehaviour
     [SerializeField] private GameObject _cameraTilter;
     [SerializeField] private GameObject _marblePrefab;
     [SerializeField] private Lift _liftPrefab;
-    [SerializeField] private float TiltForce = 1.0f;
-    [SerializeField] private float VisualTiltSpeed = 3.0f;
-    [SerializeField] private float VisualTiltAmount = 15.0f;
-    [SerializeField] private float WinTime = 3.0f;
-    [SerializeField] private int Seed = -1;
+    [SerializeField] private float _tiltForce = 1.0f;
+    [SerializeField] private float _visualTiltSpeed = 3.0f;
+    [SerializeField] private float _visualTiltAmount = 15.0f;
+    [SerializeField] private int _seed = -1;
+    [SerializeField] private bool _pathConstraint = true;
 
     [SerializeField] private Slider _sizeXSlider;
     [SerializeField] private Slider _sizeYSlider;
@@ -45,13 +45,11 @@ public class World : MonoBehaviour
     public int WFCStepsPerFrame = -1;
     public float WFCStepDelay = 0.0f;
 
-   
     private bool _wfcFinished;
     private float _wfcDelayTimer;
-    private double _wfcTimer;
     private bool _spawnedMarble;
     private Vector3 _marbleSpawnPos;
-    private Rigidbody _marble;
+    private List<Rigidbody> _marbles = new List<Rigidbody>();
     private Lift _lift;
     private bool _win;
     private float _winTimer;
@@ -92,7 +90,9 @@ public class World : MonoBehaviour
         transform.rotation = Quaternion.identity;
         
         Vector3Int start = new Vector3Int(0, _grid.GridSize.y - 1, 0);
-        Vector3Int end = new Vector3Int(0, 0, 0);
+        Vector3Int end = new Vector3Int(_grid.GridSize.x - 1, 0, _grid.GridSize.z - 1);
+        
+        end = new Vector3Int(0, 0, 0);
 
         _wfcStopwatch = new Stopwatch();
         _generationStopwatch = new Stopwatch();
@@ -101,7 +101,9 @@ public class World : MonoBehaviour
         _generationStopwatch.Start();
         _wfcStopwatch.Start();
         
-        _wfc.Setup(_grid, _tileDatabase.Tiles, start, end, Seed);
+        System.Random rng = new System.Random();
+        int wfcSeed = _seed == -1 ? Mathf.Abs(rng.Next()) : _seed;
+        _wfc.Setup(_grid, _tileDatabase.Tiles, start, end, wfcSeed, _pathConstraint);
         
         _wfcStopwatch.Stop();
         
@@ -136,8 +138,7 @@ public class World : MonoBehaviour
 
         if (_wfcFinished && !_spawnedMarble)
         {
-            GameObject marble = Instantiate(_marblePrefab, _marbleSpawnPos, quaternion.identity);
-            _marble = marble.GetComponent<Rigidbody>();
+            DoMarbleSpawn();
             _spawnedMarble = true;
             _cameraRig.SetActive(true);
         }
@@ -171,17 +172,21 @@ public class World : MonoBehaviour
                 dir -= forward;
             if (Keyboard.current.dKey.isPressed)
                 dir += right;
-            
-            _marble.AddForceAtPosition(dir * Time.deltaTime * TiltForce, _marble.position, ForceMode.Impulse);
-            
+
+            foreach (Rigidbody marble in _marbles)
+            {
+                marble.AddForceAtPosition(dir * (Time.deltaTime * _tiltForce), marble.position, ForceMode.Impulse);
+            }
+
             Vector3 tiltAxis = Vector3.Cross(dir.normalized, Vector3.up);
-            Quaternion desiredTilt = Quaternion.AngleAxis(VisualTiltAmount * dir.magnitude, tiltAxis);
-            _cameraTilter.transform.rotation = Quaternion.Slerp(_cameraTilter.transform.rotation, desiredTilt, Time.deltaTime * VisualTiltSpeed);
+            Quaternion desiredTilt = Quaternion.AngleAxis(_visualTiltAmount * dir.magnitude, tiltAxis);
+            _cameraTilter.transform.rotation = Quaternion.Slerp(_cameraTilter.transform.rotation, desiredTilt, Time.deltaTime * _visualTiltSpeed);
         }
         
         if (_wfcFinished && !_win)
         {
-            _cameraRig.transform.position = _marble.position;
+            _cameraRig.transform.position = _grid.GridSizeF * (_grid.CellSize * 0.5f);
+            //_cameraRig.transform.position = _marble.position;
         }
     }
 
@@ -258,7 +263,6 @@ public class World : MonoBehaviour
             {
                 //Debug.Log($"{wfcSteps} WFC steps in {Time.realtimeSinceStartupAsDouble - wfcStartTime} this frame.");
             }
-            _wfcTimer += Time.realtimeSinceStartupAsDouble - wfcStartTime;
             if (_wfcFinished)
             {
                 Debug.Log($"# Generation completed in: {_generationStopwatch.ElapsedMilliseconds / 1000.0f}.\n" +
@@ -332,6 +336,20 @@ public class World : MonoBehaviour
     {
         return _tileFactory.SetTile(cellIdx, tileIdx, _tileDatabase, _grid);
     }
+
+    public void MarbleSpawn(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            DoMarbleSpawn();
+        }
+    }
+    
+    private void DoMarbleSpawn()
+    {
+        GameObject marble = Instantiate(_marblePrefab, _marbleSpawnPos, quaternion.identity);
+        _marbles.Add(marble.GetComponent<Rigidbody>());
+    }
     
     public void OnRegenerate()
     {
@@ -340,12 +358,12 @@ public class World : MonoBehaviour
         _cameraRig.SetActive(false);
         _mainCamera.transform.SetPositionAndRotation(_camOriginalPos, _camOriginalRot);
         _spawnedMarble = false;
-        if (_marble)
+        foreach (Rigidbody marble in _marbles)
         {
-            Destroy(_marble.gameObject);
+            Destroy(marble.gameObject);
         }
-        _marble = null;
-        
+        _marbles.Clear();
+
         _wfc.Reset();
         Init(); 
     }
@@ -371,10 +389,12 @@ public class World : MonoBehaviour
         _gridSize.z = (int) value;
     }
 
-    public void OnMarbleEnterWinArea()
+    public void OnMarbleEnterWinArea(Marble marble)
     {
-        _win = true;
-        _winTimer = WinTime;
-        _cameraRig.SetActive(false);
+        // _win = true;
+        // _winTimer = WinTime;
+        // _cameraRig.SetActive(false);
+        
+        Destroy(marble);
     }
 }

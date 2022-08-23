@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using AStar;
 using Tiles;
 using UnityEngine;
 using Unity.Collections.LowLevel.Unsafe;
@@ -59,6 +60,7 @@ namespace WFC
         private NativeArray<int> _return;
         private NativeArray<int> _collapsedCells;
         private NativeArray<int> _collapsedTiles;
+        private NativeArray<int> _startCells;
 
         private int _startCell;
         private int _endCell;
@@ -98,8 +100,7 @@ namespace WFC
             _initialised = false;
         }
 
-        public override void Setup(Grid grid, List<TileDatabase.Tile> tiles, Vector3Int startCell, Vector3Int endTile,
-            int seed)
+        public override void Setup(Grid grid, List<TileDatabase.Tile> tiles, Vector3Int startCell, Vector3Int endCell, int seed, bool pathConstraint)
         {
             _profileSetup.Begin();
 
@@ -109,7 +110,7 @@ namespace WFC
             Dispose();
 
             _startCell = Grid.IndexFromXYZ(startCell, grid.GridSize, out bool _);
-            _endCell = Grid.IndexFromXYZ(endTile, grid.GridSize, out bool _);
+            _endCell = Grid.IndexFromXYZ(endCell, grid.GridSize, out bool _);
 
             _stackSize = 0;
             _gridSize = grid.GridSize;
@@ -133,6 +134,10 @@ namespace WFC
             _incompatible = new NativeArray<int>(T, Allocator.Persistent);
             _return = new NativeArray<int>((int) WfcStepJob.StepReturnParams.COUNT, Allocator.Persistent);
 
+            _startCells = new NativeArray<int>(2, Allocator.Persistent);
+            _startCells[0] = _startCell;
+            _startCells[1] = _endCell;
+
             // create tile array
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -150,6 +155,13 @@ namespace WFC
                 _tiles[i, (int) TILE.NOT_SIDE_3] = (ushort) tile.NotMatch[3];
 
                 _tileWeights[i] = tile.Weight;
+            }
+
+            List<Location> path = null;
+            if (pathConstraint)
+            {
+                path = PathConstraint.FindPath(grid.GridSize, startCell, endCell, seed);
+                Debug.Assert(path != null);
             }
 
             // create cell arrays
@@ -210,20 +222,23 @@ namespace WFC
                         BanTileAndComposite(c, t, tiles[t]);
 
                     // place the starting tile
-                    if (c == _startCell)
+                    if (c == _startCell && !tiles[t].Starter)
                     {
-                        if (!tiles[t].Starter)
-                        {
-                            BanTileAndComposite(c, t, tiles[t]);
-                        }
+                        BanTileAndComposite(c, t, tiles[t]);
                     }
-                    // place the ending tile
-                    if (c == _endCell)
+                    else if (c != _startCell && tiles[t].Starter)
                     {
-                        if (!tiles[t].Ender)
-                        {
-                            BanTileAndComposite(c, t, tiles[t]);
-                        }
+                        BanTileAndComposite(c, t, tiles[t]);
+                    }
+                    
+                    // place the ending tile
+                    if (c == _endCell && !tiles[t].Ender)
+                    {
+                        BanTileAndComposite(c, t, tiles[t]);
+                    }
+                    else if (c != _endCell && tiles[t].Ender)
+                    {
+                        BanTileAndComposite(c, t, tiles[t]);
                     }
 
                     // prevent any path going off the top of the grid
@@ -231,13 +246,42 @@ namespace WFC
                     {
                         BanTileAndComposite(c, t, tiles[t]);
                     }
-
-                    // prevent any path going off the bottom of the grid
-                    // if (xyz.y == 0 && SlopesDown(_tiles, t))
-                    // {
-                    //     //didBanTile = true;
-                    //     _wave[c, t] = 0;
-                    // }
+                }
+                
+                // apply the path constraints
+                if (pathConstraint)
+                {
+                    Dictionary<Vector3Int, int> dirToSide = new Dictionary<Vector3Int, int>();
+                    dirToSide[_d[0]] = (int) TILE.SIDE_0;
+                    dirToSide[_d[1]] = (int) TILE.SIDE_1;
+                    dirToSide[_d[2]] = (int) TILE.SIDE_2;
+                    dirToSide[_d[3]] = (int) TILE.SIDE_3;
+                    dirToSide[_d[4]] = (int) TILE.TOP;
+                    dirToSide[_d[5]] = (int) TILE.BOT;
+                    int indexInPath = path.IndexOf(new Location(xyz));
+                    if (indexInPath >= 0)
+                    {
+                        int prev = indexInPath - 1;
+                        int next = indexInPath + 1;
+                        List<Vector3Int> dirs = new List<Vector3Int>();
+                        if (prev >= 0)
+                        {
+                            dirs.Add(path[prev].Pos - xyz);
+                        }
+                        if (next < path.Count)
+                        {
+                            dirs.Add(path[next].Pos - xyz);
+                        }
+                
+                        for (ushort t = 0; t < tiles.Count; t++)
+                        {
+                            foreach (Vector3Int d in dirs)
+                            {
+                                if (_tiles[t, dirToSide[d]] == 0)
+                                    BanTileAndComposite(c, t, tiles[t]);
+                            }
+                        }
+                    }
                 }
 
                 _entropy[c] = CalcEntropy(c, _wave, _tiles, T, _tileWeights);
@@ -259,8 +303,7 @@ namespace WFC
                 UnsafeUtility.MemCpy(dst, src, sizeof(float) * C);
             }
 
-            System.Random rng = new System.Random();
-            _seed = seed == -1 ? Mathf.Abs(rng.Next()) : seed;
+            _seed = seed;
             _rng = new System.Random(_seed);
 
             _stopwatch.Stop();
@@ -338,7 +381,7 @@ namespace WFC
                 _incompatible = _incompatible,
                 _return = _return,
                 _seed = _rng.Next(),
-                _startCell = _startCell,
+                _startCells = _startCells,
                 _stepCount = _stepCount
             };
 

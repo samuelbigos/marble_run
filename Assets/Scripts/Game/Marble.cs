@@ -6,7 +6,7 @@ public class Marble : MonoBehaviour
     {
         if (other.CompareTag("WinArea"))
         {
-            World.Instance.OnMarbleEnterWinArea();
+            World.Instance.OnMarbleEnterWinArea(this);
         }
     }
 }

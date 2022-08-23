@@ -66,6 +66,9 @@ namespace Tiles
             // composite tiles
             foreach (BaseTileComposite baseComposite in BaseTileComposites)
             {
+                if (baseComposite.Disabled)
+                    continue;
+                
                 GameObject compositeObj = null;
                 if (spawnDebugTiles)
                 {
@@ -179,6 +182,9 @@ namespace Tiles
             // standard tiles
             foreach (BaseTile baseTile in BaseTiles)
             {
+                if (baseTile.Disabled)
+                    continue;
+                
                 if (baseTile.Composite)
                     continue;
                 

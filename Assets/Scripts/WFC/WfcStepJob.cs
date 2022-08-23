@@ -27,7 +27,7 @@ namespace WFC
         [ReadOnly] public NativeArrayXD<ushort> _tiles;
         [ReadOnly] public NativeArray<float> _tileWeights;
 
-        [ReadOnly] public int _startCell;
+        [ReadOnly] public NativeArray<int> _startCells;
         [ReadOnly] public int _seed;
         [ReadOnly] public int _stepCount;
 
@@ -93,7 +93,13 @@ namespace WFC
             int randTile = -1;
 
             // hack to allow the first cell to be collapse even though the tile weight is 0.
-            if (current == _startCell)
+            bool isStartCell = false;
+            for (int i = 0; i < _startCells.Length; i++)
+            {
+                if (_startCells[i] == current)
+                    isStartCell = true;
+            }
+            if (isStartCell)
             {
                 int count = 0;
                 for (int i = 0; i < T; i++)

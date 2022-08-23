@@ -14,7 +14,7 @@ namespace WFC
     
    public abstract class WfcBase : MonoBehaviour
    {
-       public abstract void Setup(Grid grid, List<TileDatabase.Tile> tileDatabaseTiles, Vector3Int start, Vector3Int end, int seed);
+       public abstract void Setup(Grid grid, List<TileDatabase.Tile> tileDatabaseTiles, Vector3Int start, Vector3Int endCell, int seed, bool pathConstraint);
        public abstract StepResult Step(out List<(int, int)> valueTuples, out int i, out int i1);
        public abstract void Reset();
    } 
